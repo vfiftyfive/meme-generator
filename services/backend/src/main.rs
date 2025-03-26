@@ -43,6 +43,10 @@ struct Config {
     #[clap(long, env = "HF_API_TOKEN")]
     hf_api_token: String,
 
+    /// Hugging Face API URL
+    #[clap(long, env = "HF_API_URL", default_value = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5")]
+    hf_api_url: String,
+
     /// Redis cache TTL in seconds
     #[clap(long, env = "CACHE_TTL", default_value = "3600")]
     cache_ttl: u64,
@@ -366,13 +370,20 @@ async fn process_request(
         request.prompt
     );
     
-    // Select the model based on fast_mode parameter
-    let api_url = if request.fast_mode {
-        // Use the faster FLUX model
+    // Select the model based on parameters
+    let api_url = if request.fast_mode || request.small_image {
+        // Use the faster FLUX model when either fast_mode or small_image is selected
         "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
     } else {
-        // Use the higher quality model
-        "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-dev"
+        // If neither fast_mode nor small_image is selected, check if env var is set
+        let state_guard = state.lock().await;
+        let env_url = &state_guard.config.hf_api_url;
+        if env_url.is_empty() {
+            // Default to FLUX.1-schnell if env var is empty
+            "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
+        } else {
+            env_url
+        }
     };
     
     // Create the request with parameters including image size

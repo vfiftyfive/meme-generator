@@ -32,9 +32,40 @@ The service follows a message-driven architecture:
 | `NATS_RESPONSE_SUBJECT` | Subject for outgoing responses | `meme.response` |
 | `REDIS_URL` | Redis URL | `redis://redis.cache.svc.cluster.local:6379` |
 | `HF_API_TOKEN` | Hugging Face API token | (required) |
-| `HF_API_URL` | Hugging Face API URL | `https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5` |
+| `HF_API_URL` | Hugging Face API URL | Not used (see Image Generation Models section) |
 | `CACHE_TTL` | Redis cache TTL in seconds | `3600` |
 | `METRICS_ADDR` | Metrics listen address | `0.0.0.0:9090` |
+
+## NATS Configuration
+
+The NATS configuration is consistent across all components of the system:
+
+### NATS Endpoints
+
+| Purpose | Endpoint | Port | Used By |
+|---------|----------|------|--------|
+| Message Communication | `nats.messaging.svc.cluster.local` | 4222 | Backend service for sending/receiving messages |
+| Monitoring | `nats.messaging.svc.cluster.local` | 8222 | KEDA for autoscaling, Prometheus for metrics |
+| WebSocket | `nats.messaging.svc.cluster.local` | 8080 | Frontend for browser-based communication |
+
+### NATS Stream Configuration
+
+| Component | Stream Name | Consumer Name | Request Subject | Response Subject |
+|-----------|-------------|---------------|-----------------|------------------|
+| Rust Backend | `MEMES` | `meme-generator` | `meme.request` | `meme.response` |
+| K8s Deployment | `MEMES` | `meme-generator` | `meme.request` | `meme.response` |
+| KEDA ScaledObject | `MEMES` | `meme-generator` | N/A | N/A |
+
+### Image Generation Models
+
+The backend uses different Hugging Face models based on request parameters:
+
+| Mode | Model | When Used |
+|------|-------|----------|
+| Fast Mode | `black-forest-labs/FLUX.1-schnell` | When fast_mode=true OR small_image=true |
+| Default | `black-forest-labs/FLUX.1-schnell` | Default model for all requests |
+
+Note: The `HF_API_URL` environment variable is not used by default, as the service uses the FLUX models directly.
 
 ## Development
 

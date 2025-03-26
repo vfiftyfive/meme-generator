@@ -48,8 +48,7 @@ spec:
           value: "meme.response"
         - name: REDIS_URL
           value: "redis://redis.cache.svc.cluster.local:6379"
-        - name: HF_API_URL
-          value: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+        # HF_API_URL removed - using FLUX.1-schnell model by default
         - name: HF_API_TOKEN
           valueFrom:
             secretKeyRef:
