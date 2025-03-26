@@ -1,0 +1,25 @@
+# Redis Operator values for Meme Battle Royale demo
+redisOperator:
+  name: redis-operator
+  imagePullPolicy: IfNotPresent
+  watchNamespace: cache
+  webhook: false
+  
+# Resource limits suitable for minikube demo
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Single replica is sufficient for demo
+replicas: 1
+
+# Enable RBAC for operator
+rbac:
+  enabled: true
+
+serviceAccount:
+  automountServiceAccountToken: true

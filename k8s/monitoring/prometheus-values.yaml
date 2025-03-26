@@ -1,0 +1,116 @@
+# prometheus-values.yaml - Optimized for Meme Battle Royale Demo
+# Prometheus Setup for Minikube
+# Use Helm to install the kube-prometheus-stack
+
+# This file provides instructions for deploying Prometheus with Helm
+# Custom values are in prometheus-values.yaml
+
+# === Deployment Steps ===
+# 1. Add Prometheus community Helm repo: 
+#    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#    helm repo update
+#
+# 2. Create monitoring namespace:
+#    kubectl create namespace monitoring
+#
+# 3. Install kube-prometheus-stack with values:
+#    helm install prometheus prometheus-community/kube-prometheus-stack \
+#      --namespace monitoring \
+#      -f prometheus-values.yaml
+#
+# 4. To access the Prometheus UI:
+#    kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
+#
+# 5. To access the Grafana UI:
+#    kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
+#    (Default credentials: admin/meme-battle)
+
+# Grafana configuration
+grafana:
+  enabled: true
+  adminPassword: "password"
+  
+  # Enable persistence to retain dashboards between restarts
+  persistence:
+    enabled: true
+    size: 1Gi
+  
+  # Enable dashboard sidecar to auto-discover dashboards
+  sidecar:
+    dashboards:
+      enabled: true
+    datasources:
+      enabled: true
+  
+  # Add useful dashboards for the demo
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+# Prometheus configuration
+prometheus:
+  enabled: true
+  prometheusSpec:
+    # Set reasonable resource limits for Minikube
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
+    
+    # Keep data for just one day (demo only)
+    retention: 1d
+    
+    # Enable minimal persistent storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+    
+    # Add scrape configurations for NATS and custom metrics
+    additionalScrapeConfigs:
+      # NATS monitoring
+      - job_name: 'nats'
+        metrics_path: '/metrics'
+        static_configs:
+          - targets: ['nats.messaging.svc.cluster.local:8222']
+      
+      # Redis metrics
+      - job_name: 'redis'
+        static_configs:
+          - targets: ['redis.cache.svc.cluster.local:9121']
+
+# Disable components not needed for the demo
+alertmanager:
+  enabled: false
+
+# Use minimal resources for operator
+prometheusOperator:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+# Enable service monitors for our components
+defaultRules:
+  create: true
+kubeStateMetrics:
+  enabled: true
+nodeExporter:
+  enabled: true

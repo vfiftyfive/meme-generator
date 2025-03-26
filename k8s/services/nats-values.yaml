@@ -1,0 +1,47 @@
+# NATS Helm values for Meme Battle Royale demo
+# Disable cluster mode for simplicity in demo
+config:
+  # Enable JetStream
+  jetstream:
+    enabled: true
+    fileStore:
+      enabled: true
+      dir: /data
+      pvc:
+        enabled: true
+        size: 1Gi
+        name: nats-js-pvc
+  
+  # Enable websocket
+  websocket:
+    enabled: true
+    port: 8080
+    merge:
+      allowed_origins: "*"
+      
+  # Enable monitoring endpoint for KEDA
+  monitor:
+    enabled: true
+    port: 8222
+
+# Enable Prometheus metrics exporter
+promExporter:
+  enabled: true
+  port: 7777
+  podMonitor:
+    enabled: true
+    merge:
+      namespace: monitoring
+
+# Configure service ports
+service:
+  enabled: true
+  ports:
+    nats:
+      enabled: true
+    monitor:
+      enabled: true
+
+# Disable NATS Box for simplicity
+natsBox:
+  enabled: false

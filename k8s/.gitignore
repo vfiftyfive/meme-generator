@@ -1,0 +1,19 @@
+# Kubernetes secrets
+*-secrets.yaml
+*-secret.yaml
+
+# Local configuration
+kubeconfig
+*.kubeconfig
+
+# Generated manifests
+*-generated.yaml
+
+# Temporary files
+*.tmp
+*.temp
+
+# Helm charts dependencies and packages
+charts/*/charts/
+charts/*/Chart.lock
+*.tgz

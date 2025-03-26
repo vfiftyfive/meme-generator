@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+  labels:
+    app: meme-generator
+spec:
+  replicas: 1  # Will be managed by KEDA
+  selector:
+    matchLabels:
+      app: meme-generator
+  template:
+    metadata:
+      labels:
+        app: meme-generator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9090"
+    spec:
+      containers:
+      - name: meme-generator
+        image: meme-generator:latest  # Replace with your registry path
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+        ports:
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: RUST_LOG
+          value: "info,meme_generator=debug"
+        - name: NATS_URL
+          value: "nats://nats.messaging.svc.cluster.local:4222"
+        - name: NATS_STREAM
+          value: "MEMES"
+        - name: NATS_CONSUMER
+          value: "meme-generator"
+        - name: NATS_REQUEST_SUBJECT
+          value: "meme.request"
+        - name: NATS_RESPONSE_SUBJECT
+          value: "meme.response"
+        - name: REDIS_URL
+          value: "redis://redis.cache.svc.cluster.local:6379"
+        - name: HF_API_URL
+          value: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+        - name: HF_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: meme-generator-secrets
+              key: HF_API_TOKEN
+        - name: CACHE_TTL
+          value: "3600"
+        - name: METRICS_ADDR
+          value: "0.0.0.0:9090"
+        livenessProbe:
+          httpGet:
+            path: /metrics
+            port: 9090
+          initialDelaySeconds: 10
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+spec:
+  selector:
+    app: meme-generator
+  ports:
+  - port: 9090
+    targetPort: 9090
+    name: metrics
+  type: ClusterIP

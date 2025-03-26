@@ -1,0 +1,43 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: meme-generator-scaler
+  namespace: meme-generator
+spec:
+  scaleTargetRef:
+    name: meme-generator
+  minReplicaCount: 0
+  maxReplicaCount: 10
+  pollingInterval: 5   # Check every 5 seconds
+  cooldownPeriod: 30   # Scale down after 30 seconds of no triggers
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 15
+        scaleDown:
+          stabilizationWindowSeconds: 10
+          policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 15
+  triggers:
+  - type: nats-jetstream
+    metadata:
+      natsServerMonitoringEndpoint: "nats.messaging.svc.cluster.local:8222"
+      stream: "MEMES"
+      consumer: "meme-generator"
+      lagThreshold: "5"     # Scale up when 5 messages are pending
+      activationLagThreshold: "1"  # Activate at 1 message to be responsive for demo
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: keda-trigger-auth-nats
+  namespace: meme-generator
+spec:
+  secretTargetRef: []  # No authentication needed for our NATS setup

@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-generator-frontend
+  labels:
+    app: meme-generator-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: meme-generator-frontend
+  template:
+    metadata:
+      labels:
+        app: meme-generator-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ${DOCKER_REGISTRY}/meme-generator-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        env:
+        - name: VITE_NATS_URL
+          valueFrom:
+            configMapKeyRef:
+              name: meme-generator-config
+              key: nats_ws_url
+        - name: VITE_REQUEST_SUBJECT
+          valueFrom:
+            configMapKeyRef:
+              name: meme-generator-config
+              key: request_subject
+        - name: VITE_RESPONSE_SUBJECT
+          valueFrom:
+            configMapKeyRef:
+              name: meme-generator-config
+              key: response_subject
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meme-generator-frontend
+  labels:
+    app: meme-generator-frontend
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: meme-generator-frontend
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meme-generator-frontend
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+  - host: meme.example.com  # Replace with your actual domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: meme-generator-frontend
+            port:
+              number: 80

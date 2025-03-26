@@ -1,0 +1,25 @@
+# Rust artifacts
+/target/
+**/*.rs.bk
+
+# Cargo.lock should be included for reproducible builds
+# But we'll ignore other files
+/.git/
+/.github/
+/.gitignore
+/.vscode/
+/.idea/
+
+# Ignore test files
+/tests/
+
+# Documentation
+/docs/
+README.md
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Kubernetes manifests
+/k8s/

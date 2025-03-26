@@ -1,0 +1,47 @@
+# Redis Operator values for Meme Battle Royale demo
+image:
+  registry: docker.io
+  repository: redis
+  tag: 7.2.4-alpine
+  pullPolicy: IfNotPresent
+
+# Single Redis instance for demo purposes
+architecture: standalone
+
+# Enable metrics for Prometheus
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    namespace: "cache"
+    labels:
+      release: prometheus
+  prometheusRule:
+    enabled: false
+
+# Resources for Redis
+master:
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  service:
+    type: ClusterIP
+    port: 6379
+  
+# Enable VPA for Redis
+vpa:
+  enabled: true
+  updateMode: "Auto"
+  minAllowed:
+    cpu: 100m
+    memory: 128Mi
+  maxAllowed:
+    cpu: 1000m
+    memory: 1Gi
