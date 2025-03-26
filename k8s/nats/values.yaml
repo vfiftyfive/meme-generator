@@ -41,6 +41,9 @@ service:
       enabled: true
     monitor:
       enabled: true
+    websocket:
+      enabled: true
+      port: 8080
 
 # Disable NATS Box for simplicity
 natsBox:

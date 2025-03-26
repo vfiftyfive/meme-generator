@@ -1,11 +1,11 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: meme-generator-scaler
-  namespace: meme-generator
+  name: nats-scaler
+  namespace: messaging
 spec:
   scaleTargetRef:
-    name: meme-generator
+    name: nats
   minReplicaCount: 0
   maxReplicaCount: 10
   pollingInterval: 5   # Check every 5 seconds
@@ -38,6 +38,6 @@ apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
   name: keda-trigger-auth-nats
-  namespace: meme-generator
+  namespace: messaging
 spec:
   secretTargetRef: []  # No authentication needed for our NATS setup

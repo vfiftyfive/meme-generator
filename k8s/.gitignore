@@ -1,6 +1,8 @@
 # Kubernetes secrets
 *-secrets.yaml
 *-secret.yaml
+secrets.yaml
+secret.yaml
 
 # Local configuration
 kubeconfig

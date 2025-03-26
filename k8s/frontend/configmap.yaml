@@ -2,11 +2,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: meme-generator-config
+  namespace: meme-generator
   labels:
     app: meme-generator
 data:
   # WebSocket URL for NATS connection (update this with your actual NATS service URL)
-  nats_ws_url: "ws://nats-service:8080"
+  nats_ws_url: "ws://nats.messaging.svc.cluster.local:8080"
   
   # NATS subjects for request/response communication
   request_subject: "meme.request"

@@ -43,5 +43,3 @@ spec:
         memory: 128Mi
   redisConfig:
     additionalRedisConfig: redis-external-config
-   
-
