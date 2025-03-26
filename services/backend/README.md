@@ -81,21 +81,119 @@ docker build -t meme-generator:latest .
    kubectl apply -f k8s/keda-scaledobject.yaml
    ```
 
+## CLI Usage
+
+The meme-generator service can be run directly from the command line with various options. All options can be provided either as command-line arguments or environment variables.
+
+### Basic Usage
+
+```bash
+# Run with default settings
+cargo run
+
+# Run with custom options
+cargo run -- --nats-url nats://localhost:4222 --redis-url redis://localhost:6379
+```
+
+### Command-line Options
+
+| Option | Environment Variable | Description | Default |
+|--------|---------------------|-------------|--------|
+| `--nats-url` | `NATS_URL` | NATS server URL | `nats://nats.messaging.svc.cluster.local:4222` |
+| `--nats-stream` | `NATS_STREAM` | NATS stream name | `MEMES` |
+| `--nats-consumer` | `NATS_CONSUMER` | NATS consumer name | `meme-generator` |
+| `--request-subject` | `NATS_REQUEST_SUBJECT` | Subject for incoming requests | `meme.request` |
+| `--response-subject` | `NATS_RESPONSE_SUBJECT` | Subject for outgoing responses | `meme.response` |
+| `--redis-url` | `REDIS_URL` | Redis URL | `redis://redis.cache.svc.cluster.local:6379` |
+| `--hf-api-token` | `HF_API_TOKEN` | Hugging Face API token | (required) |
+| `--cache-ttl` | `CACHE_TTL` | Redis cache TTL in seconds | `3600` |
+| `--metrics-addr` | `METRICS_ADDR` | Metrics listen address | `0.0.0.0:9090` |
+
+### Examples
+
+```bash
+# Run with local NATS and Redis
+cargo run -- --nats-url nats://localhost:4222 --redis-url redis://localhost:6379 --hf-api-token your_token_here
+
+# Run with environment variables
+export NATS_URL=nats://localhost:4222
+export REDIS_URL=redis://localhost:6379
+export HF_API_TOKEN=your_token_here
+export CACHE_TTL=7200
+cargo run
+
+# Run in production mode with all options
+cargo run --release -- \
+  --nats-url nats://nats.example.com:4222 \
+  --nats-stream MEMES \
+  --nats-consumer worker-1 \
+  --request-subject meme.requests.priority \
+  --response-subject meme.responses.processed \
+  --redis-url redis://redis.example.com:6379 \
+  --hf-api-token your_token_here \
+  --cache-ttl 86400 \
+  --metrics-addr 0.0.0.0:9090
+```
+
 ## Testing
 
 Use the provided scripts to test the service:
 
 ### Sending Test Requests
 
+The `send-test-request.sh` script allows you to send test requests to the meme generator:
+
 ```bash
+# Basic usage with default settings
 ./scripts/send-test-request.sh --prompt "A cat wearing a space helmet on Mars"
+
+# Advanced usage with all options
+./scripts/send-test-request.sh \
+  --nats-url nats://localhost:4222 \
+  --subject meme.request \
+  --prompt "A cyberpunk city with flying cars" \
+  --id custom-request-id \
+  --guidance 7.5 \
+  --steps 30 \
+  --negative "blurry, bad quality"
 ```
+
+#### Request Script Options
+
+| Option | Description | Default |
+|--------|-------------|--------|
+| `--nats-url` | NATS server URL | `nats://localhost:4222` |
+| `--subject` | NATS subject | `meme.request` |
+| `--prompt` | Image generation prompt | `A cat wearing sunglasses on a beach` |
+| `--id` | Request ID | (generated UUID) |
+| `--guidance` | Guidance scale | `7.5` |
+| `--steps` | Inference steps | `20` |
+| `--negative` | Negative prompt | (empty) |
 
 ### Watching for Responses
 
+The `watch-responses.sh` script allows you to monitor and save generated images:
+
 ```bash
+# Basic usage with default settings
 ./scripts/watch-responses.sh
+
+# Advanced usage with all options
+./scripts/watch-responses.sh \
+  --nats-url nats://localhost:4222 \
+  --subject meme.response \
+  --output-dir ./generated-memes \
+  --timeout 600
 ```
+
+#### Watch Script Options
+
+| Option | Description | Default |
+|--------|-------------|--------|
+| `--nats-url` | NATS server URL | `nats://localhost:4222` |
+| `--subject` | NATS subject | `meme.response` |
+| `--output-dir` | Directory to save images | `./images` |
+| `--timeout` | Watch timeout in seconds | `300` (5 minutes) |
 
 ## Metrics
 
