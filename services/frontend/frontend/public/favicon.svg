@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5733" />
+      <stop offset="100%" stop-color="#C70039" />
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="15" fill="url(#gradient)" />
+  <text x="50" y="50" font-family="Arial, sans-serif" font-size="60" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="white">M</text>
+  <path d="M20,75 L80,75 L80,85 L20,85 Z" fill="white" />
+  <path d="M30,65 L40,65 L40,75 L30,75 Z" fill="white" />
+  <path d="M60,65 L70,65 L70,75 L60,75 Z" fill="white" />
+</svg>
