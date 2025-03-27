@@ -18,14 +18,26 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
+# Install gettext package (for envsubst command)
+RUN apk add --no-cache gettext
+
 # Copy the build output to nginx
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copy the template for the runtime config
+COPY frontend/public/config.js /usr/share/nginx/html/config.js.template
+
+# Copy the entrypoint script from the host
+COPY entrypoint.sh /entrypoint.sh
+
+# Make the entrypoint script executable
+RUN chmod +x /entrypoint.sh
+
 # Expose port
 EXPOSE 80
 
 # Command to run
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/entrypoint.sh"]

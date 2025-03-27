@@ -13,13 +13,57 @@ This is the backend service for the Meme Battle Royale Kubernetes autoscaling de
 
 ## Architecture
 
-The service follows a message-driven architecture:
+The service follows a message-driven architecture that enables horizontal scaling without requiring direct service-to-service communication. This design is particularly well-suited for Kubernetes autoscaling demonstrations.
+
+### High-Level Flow
 
 1. Receives meme generation requests from NATS JetStream
 2. Checks Redis cache for existing results
 3. If not cached, calls the Hugging Face API to generate the image
 4. Caches the result in Redis
 5. Publishes the result back to NATS
+
+### Detailed Message Processing
+
+#### 1. Message Consumption
+- Backend instances pull messages from a durable NATS JetStream consumer
+- Each message contains a JSON-encoded `MemeRequest` with:
+  - Unique request ID
+  - Prompt text for image generation
+  - Configuration flags (fast_mode, small_image)
+- Messages are processed concurrently using Tokio tasks
+- Comprehensive metrics are recorded for monitoring and autoscaling
+
+#### 2. Cache Handling
+- Each request generates a cache key based on prompt and configuration
+- Redis is checked first to avoid redundant image generation
+- Cache hits are immediately returned to the client
+- Cache misses proceed to image generation
+- Successful generations are cached with configurable TTL
+
+#### 3. Image Generation
+- Model selection based on request parameters:
+  - Fast mode uses optimized model for quicker generation
+  - Small image option reduces resolution for faster processing
+- Requests are sent to Hugging Face API with appropriate parameters
+- Timeouts and error handling ensure robustness
+- Generated images are base64-encoded for transmission
+
+#### 4. Response Handling
+- Success responses are published to the configured response subject
+- Error responses are published to a dedicated error subject
+- All messages include the original request ID for correlation
+- Messages are acknowledged only after complete processing
+
+### Scaling Characteristics
+
+This architecture provides several scaling advantages:
+
+- **Horizontal Scalability**: Multiple instances process messages in parallel
+- **Automatic Load Distribution**: NATS distributes messages among available consumers
+- **Stateless Processing**: Each request is self-contained, allowing easy scaling
+- **Failure Resilience**: Failed processing can be retried automatically
+- **Metrics-Driven Scaling**: HPA and KEDA can scale based on queue depth and resource usage
 
 ## Environment Variables
 
@@ -108,9 +152,124 @@ docker build -t meme-generator:latest .
 
 2. Deploy to Kubernetes:
    ```bash
-   kubectl apply -f k8s/deployment.yaml
-   kubectl apply -f k8s/keda-scaledobject.yaml
+   kubectl apply -k k8s/backend/
    ```
+
+### Autoscaling
+
+The meme-generator backend supports two autoscaling mechanisms:
+
+#### Horizontal Pod Autoscaler (HPA)
+
+The service uses HPA for resource-based autoscaling:
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: meme-generator-hpa
+spec:
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+    scaleDown:
+      stabilizationWindowSeconds: 60  # Wait before scaling down
+```
+
+#### KEDA ScaledObject
+
+The service also uses KEDA for event-driven autoscaling based on NATS queue depth:
+
+```yaml
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: nats-scaler
+spec:
+  scaleTargetRef:
+    name: meme-generator
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 5   # Check every 5 seconds
+  cooldownPeriod: 30   # Scale down after 30 seconds of no triggers
+  triggers:
+  - type: nats-jetstream
+    metadata:
+      natsServerMonitoringEndpoint: "nats.messaging.svc.cluster.local:8222"
+      stream: "MEMES"
+      consumer: "meme-generator"
+      lagThreshold: "5"     # Scale up when 5 messages are pending
+      activationLagThreshold: "1"  # Activate at 1 message
+```
+
+This configuration allows the service to scale based on both resource utilization (via HPA) and message queue depth (via KEDA), ensuring optimal performance during varying workloads.
+
+### Monitoring
+
+The service exposes Prometheus metrics on port 9090 with the following configuration in the deployment:
+
+```yaml
+annotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: "/metrics"
+  prometheus.io/port: "9090"
+```
+
+The Prometheus configuration includes custom relabeling rules to properly collect and label metrics from the meme-generator pods:
+
+```yaml
+- job_name: 'meme-generator'
+  kubernetes_sd_configs:
+  - role: pod
+    namespaces:
+      names: ['meme-generator']
+  relabel_configs:
+  - source_labels: [__meta_kubernetes_pod_label_app]
+    regex: meme-generator
+    action: keep
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+    regex: "true"
+    action: keep
+  - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+    action: replace
+    target_label: __metrics_path__
+    regex: (.+)
+  - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+    action: replace
+    regex: ([^:]+)(?:\d+)?;(\d+)
+    replacement: $1:$2
+    target_label: __address__
+  # Preserve important labels
+  - action: labelmap
+    regex: __meta_kubernetes_pod_label_(.+)
+  - source_labels: [__meta_kubernetes_namespace]
+    action: replace
+    target_label: kubernetes_namespace
+  - source_labels: [__meta_kubernetes_pod_name]
+    action: replace
+    target_label: kubernetes_pod_name
+```
+
+This configuration enables comprehensive monitoring of the service, including:
+- Request counts and processing times
+- Cache hit/miss rates
+- Error rates
+- Resource utilization metrics
 
 ## CLI Usage
 

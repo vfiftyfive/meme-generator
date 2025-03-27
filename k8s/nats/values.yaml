@@ -17,8 +17,14 @@ config:
     enabled: true
     port: 8080
     merge:
-      allowed_origins: "*"
-      
+      no_tls: true
+      # Default behavior allows all origins when empty and same_origin is false
+      same_origin: false
+      # Enable compression for better performance
+      compression: true
+      # Set reasonable handshake timeout
+      handshake_timeout: "5s"
+
   # Enable monitoring endpoint for KEDA
   monitor:
     enabled: true

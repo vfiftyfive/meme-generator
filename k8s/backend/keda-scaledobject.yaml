@@ -1,11 +1,11 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: nats-scaler
-  namespace: messaging
+  name: meme-generator-backend-scaler
+  namespace: meme-generator
 spec:
   scaleTargetRef:
-    name: nats
+    name: meme-generator
   minReplicaCount: 0
   maxReplicaCount: 10
   pollingInterval: 5   # Check every 5 seconds
@@ -31,13 +31,15 @@ spec:
       natsServerMonitoringEndpoint: "nats.messaging.svc.cluster.local:8222"
       stream: "MEMES"
       consumer: "meme-generator"
+      account: "$G"  # Default NATS account
       lagThreshold: "5"     # Scale up when 5 messages are pending
       activationLagThreshold: "1"  # Activate at 1 message to be responsive for demo
+      useHttps: "false"  # Specify that we're not using HTTPS for monitoring
 ---
 apiVersion: keda.sh/v1alpha1
 kind: TriggerAuthentication
 metadata:
-  name: keda-trigger-auth-nats
-  namespace: messaging
+  name: keda-trigger-auth-meme-generator
+  namespace: meme-generator
 spec:
   secretTargetRef: []  # No authentication needed for our NATS setup

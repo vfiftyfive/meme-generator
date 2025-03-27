@@ -1,41 +1,47 @@
 VERSION 0.7
 
-# Common base for all targets
-base:
-    FROM alpine:latest
-    WORKDIR /app
-
 # Backend build
 backend-build:
-    FROM rust:1.76-slim
+    FROM rust:1.85-slim
     WORKDIR /app
     
-    # Copy Cargo files
-    COPY services/backend/Cargo.toml services/backend/Cargo.lock ./
+    # Install build dependencies
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends \
+        pkg-config \
+        libssl-dev \
+        build-essential \
+        git \
+        ca-certificates && \
+        rm -rf /var/lib/apt/lists/*
     
-    # Create a dummy src/main.rs to cache dependencies
-    RUN mkdir -p src && \
-        echo "fn main() {}" > src/main.rs && \
-        cargo build --release && \
-        rm -rf src
+    # Use pkg-config to find OpenSSL instead of environment variables
+    ENV OPENSSL_NO_VENDOR=1 \
+        PKG_CONFIG_ALLOW_CROSS=1 \
+        RUSTFLAGS="-C target-feature=-crt-static"
     
-    # Copy actual source code
-    COPY services/backend/src ./src
+    # Copy source code
+    COPY services/backend ./
     
-    # Build the actual application
-    RUN cargo build --release
+    # Update dependencies and build with release profile
+    RUN cargo update && \
+        cargo build --release
     
     # Save the binary
     SAVE ARTIFACT target/release/meme-generator /meme-generator
 
 # Backend Docker image
 backend-docker:
-    FROM debian:bullseye-slim
+    ARG DOCKER_REGISTRY
+    FROM debian:bookworm-slim
     WORKDIR /app
     
-    # Install dependencies
+    # Install runtime dependencies
     RUN apt-get update && \
-        apt-get install -y --no-install-recommends ca-certificates && \
+        apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libssl3 \
+        curl && \
         rm -rf /var/lib/apt/lists/*
     
     # Copy the binary from the build stage
@@ -76,8 +82,12 @@ frontend-build:
 
 # Frontend Docker image
 frontend-docker:
+    ARG DOCKER_REGISTRY
     FROM nginx:alpine
     WORKDIR /usr/share/nginx/html
+    
+    # Install gettext for envsubst
+    RUN apk add --no-cache gettext
     
     # Copy the build output from the build stage
     COPY +frontend-build/dist ./
@@ -85,11 +95,16 @@ frontend-docker:
     # Copy nginx configuration
     COPY services/frontend/nginx.conf /etc/nginx/conf.d/default.conf
     
+    # Copy config.js template and entrypoint script
+    COPY services/frontend/frontend/public/config.js ./config.js.template
+    COPY services/frontend/entrypoint.sh /entrypoint.sh
+    RUN chmod +x /entrypoint.sh
+    
     # Expose port
     EXPOSE 80
     
-    # Run nginx
-    CMD ["nginx", "-g", "daemon off;"]
+    # Use entrypoint script instead of direct nginx command
+    CMD ["/entrypoint.sh"]
     
     # Save the Docker image
     SAVE IMAGE meme-generator-frontend:latest
@@ -100,7 +115,15 @@ all:
     BUILD +backend-docker
     BUILD +frontend-docker
 
-# Build multi-platform images
-multi:
+# Build multi-platform backend image
+multi-backend:
     BUILD --platform=linux/amd64 --platform=linux/arm64 +backend-docker
+
+# Build multi-platform frontend image
+multi-frontend:
     BUILD --platform=linux/amd64 --platform=linux/arm64 +frontend-docker
+
+# Build all multi-platform images
+multi:
+    BUILD +multi-backend
+    BUILD +multi-frontend

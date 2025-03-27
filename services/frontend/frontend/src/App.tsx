@@ -4,6 +4,7 @@ import { MemeProvider } from './context/MemeContext';
 import MemeForm from './components/MemeForm';
 import MemeGallery from './components/MemeGallery';
 import ErrorAlert from './components/ErrorAlert';
+import ConnectionStatus from './components/ConnectionStatus';
 
 // Create a theme with custom primary and secondary colors
 const theme = createTheme({
@@ -47,6 +48,9 @@ function App() {
       <CssBaseline />
       <MemeProvider>
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          {/* NATS Connection Status (positioned with fixed positioning) */}
+          <ConnectionStatus />
+          
           {/* App Bar */}
           <AppBar position="static" color="primary" elevation={0}>
             <Toolbar sx={{ display: 'flex', justifyContent: 'center' }}>

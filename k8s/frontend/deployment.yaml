@@ -6,7 +6,7 @@ metadata:
   labels:
     app: meme-generator-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: meme-generator-frontend
@@ -16,48 +16,39 @@ spec:
         app: meme-generator-frontend
     spec:
       containers:
-      - name: frontend
-        image: ${DOCKER_REGISTRY}/meme-generator-frontend:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-          name: http
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-          limits:
-            cpu: 200m
-            memory: 256Mi
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        env:
-        - name: VITE_NATS_URL
-          valueFrom:
-            configMapKeyRef:
-              name: meme-generator-config
-              key: nats_ws_url
-        - name: VITE_REQUEST_SUBJECT
-          valueFrom:
-            configMapKeyRef:
-              name: meme-generator-config
-              key: request_subject
-        - name: VITE_RESPONSE_SUBJECT
-          valueFrom:
-            configMapKeyRef:
-              name: meme-generator-config
-              key: response_subject
+        - name: frontend
+          image: ${DOCKER_REGISTRY}/meme-generator-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: VITE_NATS_URL
+              value: "ws://nats.messaging.svc.cluster.local:8080"
+            - name: VITE_REQUEST_SUBJECT
+              value: "meme.request"
+            - name: VITE_RESPONSE_SUBJECT
+              value: "meme.response"
 ---
 apiVersion: v1
 kind: Service
@@ -68,10 +59,10 @@ metadata:
     app: meme-generator-frontend
 spec:
   ports:
-  - port: 80
-    targetPort: 80
-    protocol: TCP
-    name: http
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
   selector:
     app: meme-generator-frontend
 ---
@@ -86,13 +77,13 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
-  - host: meme.example.com  # Replace with your actual domain
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: meme-generator-frontend
-            port:
-              number: 80
+    - host: beagle-causal-slightly.ngrok-free.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: meme-generator-frontend
+                port:
+                  number: 80
