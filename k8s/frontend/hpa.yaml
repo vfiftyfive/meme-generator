@@ -1,38 +1,38 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: meme-generator-hpa
+  name: meme-generator-frontend-hpa
   namespace: meme-generator
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: meme-generator
+    name: meme-generator-frontend
   minReplicas: 1
-  maxReplicas: 10
+  maxReplicas: 5
   metrics:
   - type: Resource
     resource:
       name: cpu
       target:
         type: Utilization
-        averageUtilization: 50
+        averageUtilization: 30
   - type: Resource
     resource:
       name: memory
       target:
         type: Utilization
-        averageUtilization: 70
+        averageUtilization: 50
   behavior:
     scaleUp:
-      stabilizationWindowSeconds: 0  # Scale up immediately
+      stabilizationWindowSeconds: 0
       policies:
       - type: Percent
         value: 100
-        periodSeconds: 15  # Allow doubling the number of pods every 15 seconds
+        periodSeconds: 15
     scaleDown:
-      stabilizationWindowSeconds: 60  # Wait 1 minute before scaling down
+      stabilizationWindowSeconds: 300
       policies:
       - type: Percent
-        value: 50
-        periodSeconds: 60  # Scale down by 50% every minute
+        value: 20
+        periodSeconds: 60

@@ -11,10 +11,9 @@
 
 use anyhow::{Context, Result};
 use async_nats::{self, jetstream};
-use base64::{Engine, engine::general_purpose::STANDARD};
+use base64::{engine::general_purpose::STANDARD, Engine};
 use clap::Parser;
 use futures::stream::StreamExt;
-use uuid::Uuid;
 use metrics_exporter_prometheus::PrometheusBuilder;
 use redis::{aio::ConnectionManager, AsyncCommands};
 use serde::{Deserialize, Serialize};
@@ -22,22 +21,26 @@ use std::{sync::Arc, time::Duration};
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, instrument, warn};
 use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use uuid::Uuid;
 
 // ===== CONFIGURATION =====
 // This struct defines our service configuration with sensible defaults for Kubernetes.
 // We use clap's derive feature to automatically parse environment variables, making the
 // service cloud-native and easily configurable in different environments without code changes.
 //
-// Why use clap?
-// - Unified handling of CLI args and env vars follows the 12-factor app methodology
-// - Automatic documentation and validation of configuration options
-// - Prevents configuration errors through type checking and default values
 
 #[derive(Parser, Debug, Clone)]
-#[clap(name = "meme-generator", about = "Meme Battle Royale generator service")]
+#[clap(
+    name = "meme-generator",
+    about = "Meme Battle Royale generator service"
+)]
 struct Config {
     /// NATS server URL - Uses Kubernetes DNS for service discovery
-    #[clap(long, env = "NATS_URL", default_value = "nats://nats.messaging.svc.cluster.local:4222")]
+    #[clap(
+        long,
+        env = "NATS_URL",
+        default_value = "nats://nats.messaging.svc.cluster.local:4222"
+    )]
     nats_url: String,
 
     /// NATS stream name - Persistent storage for our message queue
@@ -57,7 +60,11 @@ struct Config {
     response_subject: String,
 
     /// Redis URL - Used for caching generated images to improve performance
-    #[clap(long, env = "REDIS_URL", default_value = "redis://redis.cache.svc.cluster.local:6379")]
+    #[clap(
+        long,
+        env = "REDIS_URL",
+        default_value = "redis://redis.cache.svc.cluster.local:6379"
+    )]
     redis_url: String,
 
     /// Hugging Face API Token - Required for accessing the image generation API
@@ -67,7 +74,11 @@ struct Config {
 
     /// Hugging Face API URL - Model endpoint for image generation
     /// Default is stable-diffusion-v1-5, but code will use FLUX model for fast_mode
-    #[clap(long, env = "HF_API_URL", default_value = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5")]
+    #[clap(
+        long,
+        env = "HF_API_URL",
+        default_value = "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5"
+    )]
     hf_api_url: String,
 
     /// Redis cache TTL in seconds - How long to keep generated images cached
@@ -86,11 +97,11 @@ struct Config {
 // Each message type serves a specific purpose in the request/response flow.
 
 /// Request for meme generation sent by clients
-/// 
+///
 /// This type includes optional parameters for controlling the generation process:
 /// - fast_mode: Uses a faster but potentially lower quality model
 /// - small_image: Generates a smaller 512x512 image instead of 1024x1024
-/// 
+///
 /// Default values ensure backward compatibility if clients don't specify options.
 /// The ID is auto-generated if not provided for tracing through the system.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -126,7 +137,7 @@ fn default_small_image() -> bool {
 }
 
 /// Response containing a generated meme image
-/// 
+///
 /// The image_data field contains the base64-encoded image to avoid
 /// binary transmission issues and enable direct embedding in web pages.
 #[derive(Debug, Serialize, Deserialize)]
@@ -138,7 +149,7 @@ struct MemeResponse {
 }
 
 /// Error response for failed meme generation
-/// 
+///
 /// Sent when image generation fails for any reason.
 /// The error string provides details about what went wrong.
 #[derive(Debug, Serialize, Deserialize)]
@@ -149,7 +160,7 @@ struct MemeError {
 }
 
 /// Request format for the Hugging Face API
-/// 
+///
 /// Structured according to the Hugging Face inference API requirements.
 /// The inputs field contains the prompt text, while parameters can specify
 /// additional generation options like image dimensions.
@@ -164,7 +175,7 @@ struct HuggingFaceRequest {
 // We use Arc<Mutex<>> around this to safely share state between async tasks.
 
 /// Application state containing all resources needed for request processing
-/// 
+///
 /// This centralized state management approach allows us to:
 /// 1. Share connections efficiently between requests
 /// 2. Avoid resource leaks by properly managing lifetimes
@@ -173,15 +184,15 @@ struct AppState {
     /// Redis connection manager for caching generated images
     /// ConnectionManager handles automatic reconnection if Redis connection is lost
     redis: ConnectionManager,
-    
+
     /// NATS JetStream context for publishing messages
     /// Used for responding to clients with generated images or errors
     js: jetstream::Context,
-    
+
     /// Application configuration derived from environment variables
     /// Stored here to avoid passing it around to every function
     config: Config,
-    
+
     /// HTTP client for Hugging Face API requests
     /// Pre-configured with timeout and authorization headers
     http_client: reqwest::Client,
@@ -192,7 +203,7 @@ struct AppState {
 // We use a structured approach to initialization to ensure proper error handling.
 
 /// Main application entry point
-/// 
+///
 /// Initialization sequence:
 /// 1. Parse configuration from environment variables
 /// 2. Set up logging with structured contexts
@@ -222,20 +233,20 @@ async fn main() -> Result<()> {
         .set_buckets(&[0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 30.0, 60.0, 120.0])?;
 
     let handle = builder.install_recorder()?;
-    
+
     // Start the metrics server - Using axum for a lightweight HTTP server
     // This runs in a separate task to avoid blocking the main application flow
     let metrics_addr = config.metrics_addr.clone();
     tokio::spawn(async move {
         let server = axum::Router::new()
-            .route("/metrics", axum::routing::get(move || async move { handle.render() }))
+            .route(
+                "/metrics",
+                axum::routing::get(move || async move { handle.render() }),
+            )
             .into_make_service();
-            
+
         let addr = metrics_addr.parse().unwrap();
-        axum::Server::bind(&addr)
-            .serve(server)
-            .await
-            .unwrap();
+        axum::Server::bind(&addr).serve(server).await.unwrap();
     });
     info!("Metrics server started on {}", config.metrics_addr);
 
@@ -246,7 +257,7 @@ async fn main() -> Result<()> {
     let js = jetstream::new(nats);
 
     // Ensure stream exists - Creating it if needed
-    // The stream configuration uses:  
+    // The stream configuration uses:
     // - File storage for durability across restarts
     // - WorkQueue retention to process each message once
     let stream_config = jetstream::stream::Config {
@@ -264,7 +275,10 @@ async fn main() -> Result<()> {
         Err(_) => js.create_stream(stream_config).await?,
     };
 
-    info!("Connected to NATS stream {}", stream.info().await?.config.name);
+    info!(
+        "Connected to NATS stream {}",
+        stream.info().await?.config.name
+    );
 
     // Connect to Redis - Used for caching generated images
     // This improves response times and reduces API costs for repeated requests
@@ -338,12 +352,6 @@ async fn main() -> Result<()> {
 /// 3. Processes each request in a separate async task for concurrent handling
 /// 4. Tracks metrics for monitoring and reliability analysis
 /// 5. Provides error handling and recovery at multiple levels
-///
-/// Why this approach?
-/// - Concurrent processing: Using separate tasks means slow requests don't block others
-/// - Resilience: Error handling at each stage prevents cascading failures
-/// - Observability: Detailed metrics and logging enable monitoring and troubleshooting
-/// - At-least-once delivery: Explicit message acknowledgment ensures no requests are lost
 async fn process_messages(
     state: Arc<Mutex<AppState>>,
     consumer: async_nats::jetstream::consumer::Consumer<jetstream::consumer::pull::Config>,
@@ -363,7 +371,7 @@ async fn process_messages(
             Ok(msg) => msg,
             Err(e) => {
                 error!("Error receiving message: {}", e);
-                continue;  // Skip to the next message
+                continue; // Skip to the next message
             }
         };
 
@@ -377,7 +385,7 @@ async fn process_messages(
                 if let Err(e) = message.ack().await {
                     error!("Failed to ack message: {}", e);
                 }
-                continue;  // Skip to the next message
+                continue; // Skip to the next message
             }
         };
 
@@ -425,7 +433,8 @@ async fn process_messages(
                     // Send explicit error response to the client
                     // This provides clear feedback rather than silent failures
                     // and enables better UX with appropriate error handling
-                    if let Err(e) = send_error_response(&state_clone, &req_id, e.to_string()).await {
+                    if let Err(e) = send_error_response(&state_clone, &req_id, e.to_string()).await
+                    {
                         error!(request_id = %req_id, "Failed to send error response: {}", e);
                     }
                 }
@@ -445,7 +454,7 @@ async fn process_messages(
 
 #[instrument(skip(state), fields(request_id = %request.id))]
 /// Core image generation function that handles the entire meme creation pipeline
-/// 
+///
 /// This function implements a multi-stage process:
 /// 1. Check Redis cache first to avoid regenerating identical images
 /// 2. If not in cache, select the appropriate model based on request parameters
@@ -454,14 +463,7 @@ async fn process_messages(
 /// 5. Cache the successful result to improve future response times
 /// 6. Deliver the response back to the client via NATS
 ///
-/// Why this architecture:
-/// - Caching: Dramatically reduces costs and latency for common prompts
-/// - Dynamic model selection: Balances quality vs. speed based on user preference
-/// - Structured error handling: Ensures clients always receive a response (success or error)
-async fn process_request(
-    state: &Arc<Mutex<AppState>>,
-    request: MemeRequest,
-) -> Result<()> {
+async fn process_request(state: &Arc<Mutex<AppState>>, request: MemeRequest) -> Result<()> {
     debug!(
         prompt = %request.prompt,
         "Processing meme request"
@@ -469,8 +471,11 @@ async fn process_request(
 
     // Try to fetch from cache first
     let state_guard = state.lock().await;
-    let cache_key = format!("meme:{}:{}:{}", request.prompt, request.fast_mode, request.small_image);
-    
+    let cache_key = format!(
+        "meme:{}:{}:{}",
+        request.prompt, request.fast_mode, request.small_image
+    );
+
     let mut redis = state_guard.redis.clone();
     drop(state_guard);
 
@@ -483,7 +488,7 @@ async fn process_request(
                 request.prompt
             );
             metrics::counter!("meme_generator_cache_hits_total", 1);
-            
+
             // Send cached response
             let response = MemeResponse {
                 request_id: request.id.clone(),
@@ -528,7 +533,7 @@ async fn process_request(
     drop(state_guard);
 
     let start = std::time::Instant::now();
-    
+
     // Format the prompt for better meme generation with clearer text instructions
     let full_prompt = format!(
         "Funny meme image with cartoon style, vibrant colors. The image should have medium-sized, white text with black outline in impact font. \
@@ -536,50 +541,51 @@ async fn process_request(
         The text should be short, funny, and placed at the top and bottom of the image in classic meme style. Make sure the text is not too large.", 
         request.prompt
     );
-    
+
     // Select the model based on parameters
     let api_url = if request.fast_mode || request.small_image {
         // Use the faster FLUX model when either fast_mode or small_image is selected
-        "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell".to_string()
+        "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
+            .to_string()
     } else {
         // If neither fast_mode nor small_image is selected, check if env var is set
         let state_guard = state.lock().await;
         let env_url = state_guard.config.hf_api_url.clone();
         drop(state_guard);
-        
+
         if env_url.is_empty() {
-            // Default to FLUX.1-schnell if env var is empty
-            "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell".to_string()
+            // Default to stable-diffusion-v1-5 if env var is empty
+            "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5".to_string()
         } else {
             env_url
         }
     };
-    
+
     // Create the request with parameters including image size
     let image_size = if request.small_image { 512 } else { 1024 };
     let parameters = serde_json::json!({
         "width": image_size,
         "height": image_size
     });
-    
+
     let hf_request = HuggingFaceRequest {
         inputs: full_prompt,
         parameters: Some(parameters),
     };
-    
+
     debug!(
         request_id = %request.id,
         "Full prompt sent to API: {}",
         hf_request.inputs
     );
-    
+
     // Add authorization header with the token
     debug!(
         request_id = %request.id,
         "Sending request to Hugging Face API: {}",
         api_url
     );
-    
+
     // Make the API request
     let response = client
         .post(&api_url)
@@ -589,10 +595,13 @@ async fn process_request(
         .send()
         .await
         .context("Failed to send request to Hugging Face API")?;
-    
+
     let status = response.status();
     if !status.is_success() {
-        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        let error_text = response
+            .text()
+            .await
+            .unwrap_or_else(|_| "Unknown error".to_string());
         error!(
             request_id = %request.id,
             status_code = %status.as_u16(),
@@ -612,7 +621,10 @@ async fn process_request(
         .context("Failed to get image bytes from response")?;
 
     let generation_time = start.elapsed().as_secs_f64();
-    metrics::histogram!("meme_generator_generation_duration_seconds", generation_time);
+    metrics::histogram!(
+        "meme_generator_generation_duration_seconds",
+        generation_time
+    );
     info!(
         request_id = %request.id,
         duration_secs = generation_time,
@@ -661,29 +673,21 @@ async fn process_request(
 }
 
 /// Publishes a successful meme generation response to the NATS message queue
-/// 
+///
 /// This function delivers the generated meme back to the client via NATS:
 /// 1. Acquires necessary configuration from shared state without holding the lock
 /// 2. Serializes the response to JSON format for transport
 /// 3. Publishes the message to the configured response subject
 /// 4. Logs successful delivery for observability
-///
-/// Why this design:
-/// - Decoupled from generation logic: Allows separation of concerns
-/// - Lock minimization: Only acquires shared state briefly to get configuration
-/// - Structured logging: Includes request ID for end-to-end request tracking
 #[instrument(skip(state), fields(request_id = %response.request_id))]
-async fn send_response(
-    state: &Arc<Mutex<AppState>>,
-    response: MemeResponse,
-) -> Result<()> {
+async fn send_response(state: &Arc<Mutex<AppState>>, response: MemeResponse) -> Result<()> {
     let state_guard = state.lock().await;
     let js = state_guard.js.clone();
     let subject = state_guard.config.response_subject.clone();
     drop(state_guard);
 
     let response_data = serde_json::to_vec(&response)?;
-    
+
     js.publish(subject, response_data.into())
         .await
         .context("Failed to publish response")?;
@@ -698,18 +702,12 @@ async fn send_response(
 }
 
 /// Delivers error information back to the client when meme generation fails
-/// 
+///
 /// This function handles the error path in our messaging architecture:
 /// 1. Creates a dedicated error subject by appending `.error` to the response subject
 /// 2. Constructs a structured error response with timestamp and request ID
 /// 3. Publishes the error details to NATS so clients can display appropriate feedback
 /// 4. Logs the error response for later troubleshooting
-///
-/// Why this matters:
-/// - Error transparency: Clients receive explicit failure notifications instead of timeouts
-/// - Correlation: Request ID allows matching errors with original requests
-/// - User experience: Frontend can show helpful error messages instead of indefinite loading
-/// - Dedicated channel: Separate error subject prevents mixing errors with successful responses
 #[instrument(skip(state))]
 async fn send_error_response(
     state: &Arc<Mutex<AppState>>,
@@ -730,7 +728,7 @@ async fn send_error_response(
     };
 
     let error_data = serde_json::to_vec(&error_response)?;
-    
+
     js.publish(subject, error_data.into())
         .await
         .context("Failed to publish error response")?;
@@ -739,6 +737,6 @@ async fn send_error_response(
         request_id = %request_id,
         "Sent error response"
     );
-    
+
     Ok(())
 }

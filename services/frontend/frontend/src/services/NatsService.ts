@@ -39,11 +39,11 @@ class NatsService {
   constructor() {
     // Access the runtime config (defined in window.RUNTIME_CONFIG)
     const config = (window as any).RUNTIME_CONFIG || {};
-    
+
     // Detect if we're running in local development mode (using port-forwarding)
-    const isLocalDevelopment = window.location.hostname === 'localhost' || 
-                               window.location.hostname === '127.0.0.1';
-    
+    const isLocalDevelopment = window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1';
+
     // Use values from runtime config with fallbacks
     // If in local development, use localhost for NATS
     if (isLocalDevelopment) {
@@ -52,11 +52,11 @@ class NatsService {
     } else {
       this.serverUrl = config.NATS_URL || 'ws://nats.messaging.svc.cluster.local:8080';
     }
-    
+
     this.requestSubject = config.REQUEST_SUBJECT || 'meme.request';
     this.responseSubject = config.RESPONSE_SUBJECT || 'meme.response';
     this.errorSubject = `${this.responseSubject}.error`;
-    
+
     console.log('🔌 Connecting to NATS server at ' + this.serverUrl + '...');
     console.log('💻 Environment details: ', {
       url: this.serverUrl,
@@ -78,16 +78,15 @@ class NatsService {
       }
 
       console.log('🔄 Attempting to connect to NATS server:', this.serverUrl);
-      
-      // Use the absolute minimum options for WebSocket connectivity
-      // When dealing with browsers, simpler is often better
+
+
       this.connection = await connect({
         servers: this.serverUrl,
         timeout: 30000  // 30 second timeout for slower network conditions
       });
-      
+
       console.log('✅ NATS connection successful');
-      
+
       // Log connection status
       const status = this.connection.status();
       console.log('📊 NATS connection status:', status);
@@ -104,14 +103,11 @@ class NatsService {
 
       return true; // Successfully connected
     } catch (error: unknown) {
-      // Create highly visible error log
       console.error('%c❌ NATS CONNECTION ERROR:', 'color: red; font-weight: bold; font-size: 16px;');
       console.error(error);
-      
-      // Additional log for troubleshooting
+
       console.error(`Failed to connect to NATS at ${this.serverUrl}`);
-      
-      // Add a DOM element to show the error for debugging (will be visible in UI)
+
       if (typeof document !== 'undefined') {
         const errorDiv = document.createElement('div');
         errorDiv.style.position = 'fixed';
@@ -127,11 +123,11 @@ class NatsService {
         errorDiv.innerHTML = `NATS Connection Error: ${error instanceof Error ? error.message : String(error)}<br>URL: ${this.serverUrl}`;
         document.body.appendChild(errorDiv);
       }
-      
+
       return false;
     }
   }
-  
+
   /**
    * Disconnect from the NATS server and clean up subscriptions
    */
@@ -140,18 +136,18 @@ class NatsService {
       this.responseSubscription.unsubscribe();
       this.responseSubscription = null;
     }
-    
+
     if (this.errorSubscription) {
       this.errorSubscription.unsubscribe();
       this.errorSubscription = null;
     }
-    
+
     if (this.connection) {
       await this.connection.drain();
       this.connection = null;
     }
   }
-  
+
   /**
    * Check if the NATS connection is currently established
    * @returns True if connected, false otherwise
@@ -159,7 +155,7 @@ class NatsService {
   isConnected(): boolean {
     return this.connection !== null && !this.connection.isClosed();
   }
-  
+
   /**
    * Get the NATS server URL this service is configured to use
    * @returns The WebSocket URL for the NATS server
@@ -172,13 +168,11 @@ class NatsService {
     if (!this.responseSubscription) return;
 
     (async () => {
-      // Non-null assertion is safe here because we check this.responseSubscription above
-      // and return if it's null
       for await (const msg of this.responseSubscription!) {
         try {
           const response = this.codec.decode(msg.data) as MemeResponse;
           const callback = this.responseCallbacks.get(response.request_id);
-          
+
           if (callback) {
             callback(response);
             this.responseCallbacks.delete(response.request_id);
@@ -195,13 +189,11 @@ class NatsService {
     if (!this.errorSubscription) return;
 
     (async () => {
-      // Non-null assertion is safe here because we check this.errorSubscription above
-      // and return if it's null
       for await (const msg of this.errorSubscription!) {
         try {
           const error = this.codec.decode(msg.data) as MemeError;
           const callback = this.errorCallbacks.get(error.request_id);
-          
+
           if (callback) {
             callback(error);
             this.errorCallbacks.delete(error.request_id);
@@ -215,8 +207,8 @@ class NatsService {
   }
 
   async requestMeme(
-    prompt: string, 
-    fastMode: boolean = false, 
+    prompt: string,
+    fastMode: boolean = false,
     smallImage: boolean = false,
     onResponse: (response: MemeResponse) => void,
     onError: (error: MemeError) => void
@@ -257,11 +249,10 @@ class NatsService {
     } else {
       throw new Error('No NATS connection available');
     }
-    
+
     return id;
   }
 
-  // No duplicate method needed - already defined above
 }
 
 // Export as singleton

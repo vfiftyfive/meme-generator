@@ -44,7 +44,7 @@ spec:
             periodSeconds: 10
           env:
             - name: VITE_NATS_URL
-              value: "ws://nats.messaging.svc.cluster.local:8080"
+              value: "wss://be35a17e95b1.ngrok.app"
             - name: VITE_REQUEST_SUBJECT
               value: "meme.request"
             - name: VITE_RESPONSE_SUBJECT

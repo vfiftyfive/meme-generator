@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: nats-monitor
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  podMetricsEndpoints:
+  - port: prom-metrics
+    path: /metrics
+    interval: 15s
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+  namespaceSelector:
+    matchNames:
+    - messaging

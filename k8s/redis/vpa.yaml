@@ -5,18 +5,18 @@ metadata:
   namespace: cache
 spec:
   targetRef:
-    apiVersion: "redis.redis.opstreelabs.in/v1beta2"
-    kind: Redis
+    apiVersion: "apps/v1"
+    kind: StatefulSet
     name: redis
   updatePolicy:
     updateMode: "Auto"
   resourcePolicy:
     containerPolicies:
-    - containerName: "*"
-      minAllowed:
-        cpu: 100m
-        memory: 128Mi
-      maxAllowed:
-        cpu: 1000m
-        memory: 1Gi
-      controlledResources: ["cpu", "memory"]
+      - containerName: "*"
+        minAllowed:
+          cpu: 25m
+          memory: 32Mi
+        maxAllowed:
+          cpu: 1000m
+          memory: 1Gi
+        controlledResources: ["cpu", "memory"]
