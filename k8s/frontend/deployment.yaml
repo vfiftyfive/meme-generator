@@ -44,7 +44,7 @@ spec:
             periodSeconds: 10
           env:
             - name: VITE_NATS_URL
-              value: "wss://be35a17e95b1.ngrok.app"
+              value: "${NATS_URL}"
             - name: VITE_REQUEST_SUBJECT
               value: "meme.request"
             - name: VITE_RESPONSE_SUBJECT
@@ -65,25 +65,3 @@ spec:
       name: http
   selector:
     app: meme-generator-frontend
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: meme-generator-frontend
-  namespace: meme-generator
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    nginx.ingress.kubernetes.io/use-regex: "true"
-spec:
-  rules:
-    - host: beagle-causal-slightly.ngrok-free.app
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: meme-generator-frontend
-                port:
-                  number: 80

@@ -12,11 +12,11 @@ spec:
     updateMode: "Auto"
   resourcePolicy:
     containerPolicies:
-      - containerName: "*"
+      - containerName: "redis"
         minAllowed:
-          cpu: 25m
+          cpu: 25m # Ensures VPA never sets requests lower than 25 millicores
           memory: 32Mi
-        maxAllowed:
-          cpu: 1000m
-          memory: 1Gi
-        controlledResources: ["cpu", "memory"]
+        maxAllowed: # Maximum VPA can recommend
+          cpu: 1000m # Caps CPU requests at 1 vCPU
+          memory: 1Gi # Caps memory requests at 1Gi
+        controlledResources: ["cpu", "memory"] # Tells VPA to manage both CPU and memory
