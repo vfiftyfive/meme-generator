@@ -7,7 +7,7 @@ The deployment infrastructure is fully automated and functional:
 - ✅ Frontend is publicly accessible
 - ✅ All infrastructure (NATS, Redis) is deployed automatically
 - ✅ WebSocket connection to NATS is working (using custom NATS deployment)
-- ✅ ngrok provides public access with custom domain (nic.scaleops.ngrok.dev)
+- ✅ Production-ready deployment patterns
 
 **Note**: The application is now fully functional for real-time meme generation.
 
@@ -23,9 +23,6 @@ skaffold run --profile=local
 
 # For other cloud providers (EKS, AKS)
 skaffold run --profile=cloud
-
-# With ngrok for public access
-skaffold run --profile=ngrok
 ```
 
 ### Delete the Application
@@ -111,13 +108,6 @@ Browser → http://<ingress-ip>/
 
 ## Platform Features
 
-### ngrok Integration
-When using the `ngrok` profile:
-- Automatic TLS certificates
-- Public access via custom domain: https://nic.scaleops.ngrok.dev
-- WebSocket support over secure connection (wss://)
-- No need for port forwarding or local tunnels
-
 ### Custom NATS Deployment
 The solution uses a custom NATS StatefulSet that:
 - Properly enables WebSocket on port 8080
@@ -187,7 +177,7 @@ The deployment process achieves all goals:
 - ✅ Full infrastructure automation (NATS, Redis)
 - ✅ Multi-platform image support (arm64 + amd64)
 - ✅ WebSocket connectivity working properly
-- ✅ Public access via ngrok with custom domain
+- ✅ Cloud-ready deployment configurations
 - ✅ Real-time meme generation fully functional
 
 The application is now production-ready with proper WebSocket support for real-time communication between the frontend and backend through NATS.

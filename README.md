@@ -7,8 +7,8 @@ A production-ready Kubernetes application demonstrating modern cloud-native depl
 Deploy the entire application with a single command:
 
 ```bash
-# Deploy with ngrok for public access
-skaffold run --profile=ngrok
+# Deploy locally  
+skaffold run --profile=local
 
 # Deploy to GKE
 skaffold run --profile=gke
@@ -25,7 +25,7 @@ This application demonstrates:
 - **Auto-scaling** with HPA, VPA, and KEDA
 - **Platform-agnostic infrastructure** using Kustomize overlays
 - **Single-command deployment** with Skaffold
-- **Public access** via ngrok with custom domain
+- **Production-ready** deployment patterns
 
 ## 🏗️ Architecture
 
@@ -66,7 +66,7 @@ This application demonstrates:
 - **Messaging**: NATS with JetStream and WebSocket support
 - **Caching**: Redis (Bitnami Helm chart)
 - **Deployment**: Skaffold, Kustomize, Helm
-- **Public Access**: ngrok Kubernetes Operator
+- **Ingress**: Kubernetes Ingress (platform-specific)
 - **Container Runtime**: Multi-platform images (ARM64 + AMD64)
 
 ## 📁 Repository Structure
@@ -83,7 +83,6 @@ meme-generator/
 │   │   ├── local/             # Local development settings
 │   │   ├── gke/               # Google Kubernetes Engine
 │   │   ├── cloud/             # Generic cloud (EKS, AKS)
-│   │   └── ngrok/             # ngrok public access
 │   ├── nats/                  # NATS configuration
 │   │   └── nats-simple.yaml   # Custom NATS with WebSocket
 │   └── infrastructure.yaml    # Complete infrastructure setup
@@ -113,18 +112,6 @@ meme-generator/
    sudo install kubectl /usr/local/bin/
    ```
 
-3. **For Public Access (ngrok)**
-   - ngrok account with API key
-   - Install ngrok operator:
-     ```bash
-     helm repo add ngrok https://ngrok.github.io/ngrok-operator
-     helm install ngrok-operator ngrok/ngrok-operator \
-       --namespace ngrok-operator \
-       --create-namespace \
-       --set credentials.apiKey=$NGROK_API_KEY \
-       --set credentials.authtoken=$NGROK_AUTHTOKEN
-     ```
-
 ### Deployment Profiles
 
 #### 1. Local Development
@@ -136,15 +123,7 @@ skaffold run --profile=local
 skaffold dev --profile=local
 ```
 
-#### 2. Public Access with ngrok
-```bash
-# Deploy with ngrok (requires Docker Hub access)
-skaffold run --profile=ngrok
-
-# Access at: https://nic.scaleops.ngrok.dev
-```
-
-#### 3. Google Kubernetes Engine (GKE)
+#### 2. Google Kubernetes Engine (GKE)
 ```bash
 # Deploy to GKE
 skaffold run --profile=gke
@@ -180,28 +159,6 @@ kubectl create secret generic meme-generator-secrets \
 - `VITE_NATS_URL`: WebSocket URL (dynamically set based on deployment)
 - `VITE_REQUEST_SUBJECT`: `meme.request`
 - `VITE_RESPONSE_SUBJECT`: `meme.response`
-
-### Custom Domain (ngrok)
-
-1. **Configure your domain in ngrok dashboard**:
-   - Log in to https://dashboard.ngrok.com
-   - Go to Domains section
-   - Add and verify your custom domain
-
-2. **Update the ingress configuration**:
-   Edit `k8s/overlays/ngrok/ngrok-ingress.yaml`:
-   ```yaml
-   spec:
-     rules:
-     - host: your-domain.ngrok.dev  # Replace with your domain
-   ```
-
-3. **Note**: The DNS is configured through the ngrok CRD (Custom Resource Definition). The ngrok operator automatically:
-   - Creates tunnels for your domain
-   - Handles TLS certificates
-   - Routes traffic to your services
-
-If you see `ERR_NGROK_3200`, ensure your domain is properly configured in the ngrok dashboard.
 
 ## 🏗️ How It Works
 
@@ -262,7 +219,7 @@ The frontend connects via WebSocket through the Ingress at `/ws` path.
    - Check ingress configuration: `kubectl get ingress -A`
 
 3. **Image Pull Errors**
-   - For ngrok profile: Ensure Docker Hub login
+   - For cloud profiles: Ensure Docker Hub login
    - For local profile: Images should be available locally
 
 4. **Namespace Terminating**
