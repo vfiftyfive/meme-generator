@@ -1,0 +1,11 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+  annotations:
+    # GKE-specific ingress annotations
+    kubernetes.io/ingress.global-static-ip-name: "meme-generator-ip"
+    kubernetes.io/ingress.class: "gce"
+    # For GKE Ingress, websocket support
+    kubernetes.io/ingress.allow-http: "true"

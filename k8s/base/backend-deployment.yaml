@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-backend
+  namespace: meme-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meme-backend
+  template:
+    metadata:
+      labels:
+        app: meme-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "9090"
+    spec:
+      containers:
+        - name: meme-generator
+          image: vfiftyfive/meme-generator-backend:latest
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          ports:
+            - containerPort: 9090
+              name: metrics
+          env:
+            - name: RUST_LOG
+              value: "info,meme_generator=debug"
+            - name: NATS_URL
+              value: "nats://nats.messaging.svc.cluster.local:4222"
+            - name: NATS_STREAM
+              value: "MEMES"
+            - name: NATS_CONSUMER
+              value: "meme-generator"
+            - name: NATS_REQUEST_SUBJECT
+              value: "meme.request"
+            - name: NATS_RESPONSE_SUBJECT
+              value: "meme.response"
+            - name: REDIS_URL
+              value: "redis://redis-master.cache.svc.cluster.local:6379"
+            - name: HF_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: meme-generator-secrets
+                  key: HF_API_TOKEN
+            - name: CACHE_TTL
+              value: "3600"
+            - name: METRICS_ADDR
+              value: "0.0.0.0:9090"
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 9090
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 10

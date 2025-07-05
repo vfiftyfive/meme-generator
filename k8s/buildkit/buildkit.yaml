@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildkit
+  namespace: buildkit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: buildkit
+  template:
+    metadata:
+      labels:
+        app: buildkit
+    spec:
+      containers:
+      - name: buildkit
+        image: moby/buildkit:latest
+        args:
+        - --addr
+        - unix:///run/buildkit/buildkitd.sock
+        - --addr
+        - tcp://0.0.0.0:1234
+        readinessProbe:
+          exec:
+            command:
+            - buildctl
+            - debug
+            - workers
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - buildctl
+            - debug
+            - workers
+          initialDelaySeconds: 5
+          periodSeconds: 30
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: buildkit-socket
+          mountPath: /run/buildkit
+        - name: buildkit-cache
+          mountPath: /var/lib/buildkit
+      volumes:
+      - name: buildkit-socket
+        emptyDir: {}
+      - name: buildkit-cache
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buildkit
+  namespace: buildkit
+spec:
+  ports:
+  - port: 1234
+    targetPort: 1234
+  selector:
+    app: buildkit

@@ -1,0 +1,12 @@
+version: "2"
+authtoken: 7EjL6q171FB8TY2EEcMz8_4ro6Fizbh56mry5Jj3GnJ
+
+tunnels:
+  meme-generator-frontend:
+    addr: 8080
+    proto: http
+    host_header: "meme-generator.local"
+  meme-generator-nats:
+    addr: 8081
+    proto: http
+    host_header: "nats.meme-generator.local"

@@ -13,7 +13,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
 spec:
   rules:
-    - host: different-ngrok-domain.ngrok-free.app # Change this as needed
+    - host: nats.meme-generator.local
       http:
         paths:
           - path: /

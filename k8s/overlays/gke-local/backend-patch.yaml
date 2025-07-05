@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-backend
+  namespace: meme-generator
+spec:
+  template:
+    spec:
+      containers:
+        - name: meme-generator
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-master.cache.svc.cluster.local:6379"

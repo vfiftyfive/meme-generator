@@ -1,0 +1,27 @@
+# Simple Redis configuration for meme-generator
+# Single master, no replicas, no sentinel
+
+architecture: standalone
+
+auth:
+  enabled: false
+
+master:
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 500m
+
+# Disable replicas
+replica:
+  replicaCount: 0
+
+# Disable Sentinel
+sentinel:
+  enabled: false

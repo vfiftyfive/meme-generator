@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+  annotations:
+    # Enable NGINX ingress controller
+    kubernetes.io/ingress.class: "nginx"
+    # WebSocket support
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Enable CORS for WebSocket connections
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization"
+spec:
+  rules:
+  - http:
+      paths:
+      # Frontend application
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: meme-generator-frontend
+            port:
+              number: 80
+      # NATS WebSocket endpoint
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: nats-websocket
+            port:
+              number: 8080

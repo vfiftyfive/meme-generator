@@ -1,0 +1,26 @@
+diff --git a/services/backend/src/main.rs b/services/backend/src/main.rs
+index 1234567..abcdefg 100644
+--- a/services/backend/src/main.rs
++++ b/services/backend/src/main.rs
+@@ -254,6 +254,20 @@ async fn main() -> Result<()> {
+     // We use NATS for its simplicity, performance, and reliability
+     info!("Connecting to NATS at {}", config.nats_url);
+     let nats = async_nats::connect(&config.nats_url).await?;
++    
++    // TEMPORARY FIX: Subscribe to Core NATS directly for WebSocket messages
++    info!("Setting up Core NATS subscription for WebSocket messages");
++    let mut core_subscription = nats.subscribe(config.request_subject.clone()).await?;
++    
++    // Start a task to forward Core NATS messages to JetStream
++    let js_for_publishing = jetstream::new(nats.clone());
++    let subject_for_forward = config.request_subject.clone();
++    tokio::spawn(async move {
++        while let Some(msg) = core_subscription.next().await {
++            info!("Forwarding message from Core NATS to JetStream");
++            let _ = js_for_publishing.publish(subject_for_forward.clone(), msg.payload).await;
++        }
++    });
++    
+     let js = jetstream::new(nats);
+ 
+     // Ensure stream exists - Creating it if needed

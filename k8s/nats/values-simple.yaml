@@ -1,0 +1,49 @@
+# Simple NATS configuration for meme-generator
+# No HA, just a single instance with JetStream and WebSocket
+
+# Disable authentication for simplicity
+auth:
+  enabled: false
+
+# Enable JetStream for message persistence
+jetstream:
+  enabled: true
+  maxMemory: 1G
+  storeDirectory: /data
+
+# Simple persistence
+persistence:
+  enabled: true
+  size: 1Gi
+
+# Disable cluster mode - single instance only
+cluster:
+  enabled: false
+
+# Extra NATS configuration to enable WebSocket
+# The Bitnami chart uses config.merge to add extra config
+config:
+  merge: |
+    websocket {
+      port: 8080
+      no_tls: true
+    }
+
+# Configure service to expose WebSocket port
+service:
+  # The Bitnami NATS chart doesn't have built-in WebSocket port
+  # We need to add it as an extra port
+  extraPorts:
+    - name: websocket
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+
+# Resource limits (keeping it light)
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 100m
+  limits:
+    memory: 512Mi
+    cpu: 500m

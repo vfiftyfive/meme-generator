@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NATS WebSocket Test</title>
+</head>
+<body>
+    <h1>NATS WebSocket Test</h1>
+    <div id="status">Connecting to ws://localhost:8090...</div>
+    <div id="info"></div>
+    
+    <script>
+        const ws = new WebSocket('ws://localhost:8090');
+        
+        ws.onopen = () => {
+            document.getElementById('status').innerHTML = '<span style="color: green;">✓ Connected!</span>';
+            document.getElementById('info').innerHTML = 'WebSocket is working properly with NATS!';
+            console.log('WebSocket connected successfully');
+            
+            // Send CONNECT command to NATS
+            ws.send('CONNECT {"verbose":false,"pedantic":false,"protocol":1}\r\n');
+        };
+        
+        ws.onmessage = (event) => {
+            console.log('Received:', event.data);
+            document.getElementById('info').innerHTML += '<br>Server: ' + event.data;
+        };
+        
+        ws.onerror = (error) => {
+            document.getElementById('status').innerHTML = '<span style="color: red;">✗ Error: ' + error + '</span>';
+            console.error('WebSocket error:', error);
+        };
+        
+        ws.onclose = () => {
+            document.getElementById('status').innerHTML = '<span style="color: orange;">⚠ Disconnected</span>';
+            console.log('WebSocket closed');
+        };
+    </script>
+</body>
+</html>

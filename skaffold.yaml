@@ -1,0 +1,266 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: meme-generator
+build:
+  artifacts:
+    - image: vfiftyfive/meme-generator-backend
+      context: services/backend
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          # Sync Rust source files (requires cargo watch in container)
+          - src: "services/backend/src/**/*.rs"
+            dest: /usr/src/app/src
+          - src: "services/backend/Cargo.toml"
+            dest: /usr/src/app
+    - image: vfiftyfive/meme-generator-frontend
+      context: services/frontend
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          # Sync frontend source files (requires npm run dev in container)
+          - src: "services/frontend/frontend/src/**/*"
+            dest: /app/frontend/src
+  local:
+    push: true
+    useBuildkit: true
+  tagPolicy:
+    sha256: {}
+
+# Default manifests using kustomize
+manifests:
+  kustomize:
+    paths:
+      - k8s/base
+
+# Deploy infrastructure with Helm
+deploy:
+  kubectl:
+    hooks:
+      before:
+        # Deploy all infrastructure first
+        - host:
+            command:
+              - "sh"
+              - "-c"
+              - |
+                echo "Creating namespaces and NATS infrastructure..."
+                kubectl apply -f k8s/infrastructure.yaml
+                echo "Waiting for NATS to be ready..."
+                kubectl rollout status statefulset/nats -n messaging --timeout=60s || true
+  helm:
+    releases:
+      # Redis (simple, non-HA)
+      - name: redis
+        remoteChart: oci://registry-1.docker.io/bitnamicharts/redis
+        version: 20.6.2
+        namespace: cache
+        createNamespace: true
+        wait: true
+        valuesFiles:
+          - k8s/redis/values-simple.yaml
+
+# Port forwarding for local development
+portForward:
+  - resourceType: service
+    resourceName: meme-generator-frontend
+    namespace: meme-generator
+    port: 80
+    localPort: 8080
+  - resourceType: service
+    resourceName: nats
+    namespace: messaging
+    port: 8222
+    localPort: 8222
+
+profiles:
+  # Local development (minikube, kind, etc)
+  - name: local
+    activation:
+      - kubeContext: minikube
+      - kubeContext: kind-*
+      - kubeContext: docker-desktop
+    build:
+      local:
+        push: false
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/local
+    portForward:
+      # Direct WebSocket port forward for local dev
+      - resourceType: service
+        resourceName: nats-websocket
+        namespace: messaging
+        port: 8080
+        localPort: 8090
+
+  # GKE deployment with Ingress
+  - name: gke
+    build:
+      artifacts:
+        - image: vfiftyfive/meme-generator-backend
+          context: services/backend
+          docker:
+            dockerfile: Dockerfile
+          sync:
+            manual:
+              - src: "services/backend/src/**/*.rs"
+                dest: /usr/src/app/src
+              - src: "services/backend/Cargo.toml"
+                dest: /usr/src/app
+        - image: vfiftyfive/meme-generator-frontend
+          context: services/frontend
+          docker:
+            dockerfile: Dockerfile
+          sync:
+            manual:
+              - src: "services/frontend/frontend/src/**/*"
+                dest: /app/frontend/src
+      local:
+        push: true
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/gke
+    deploy:
+      kubectl:
+        hooks:
+          after:
+            # Wait for Ingress to get an IP
+            - host:
+                command: ["sh", "-c", "echo 'Waiting for Ingress IP...' && sleep 60"]
+            
+            # Get Ingress IP and update frontend
+            - host:
+                command: 
+                  - "sh"
+                  - "-c"
+                  - |
+                    INGRESS_IP=$(kubectl get ingress meme-generator -n meme-generator -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    if [ -z "$INGRESS_IP" ]; then
+                      echo "Warning: Ingress IP not ready yet. Waiting more..."
+                      sleep 30
+                      INGRESS_IP=$(kubectl get ingress meme-generator -n meme-generator -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    fi
+                    
+                    if [ -n "$INGRESS_IP" ]; then
+                      echo "Ingress IP: $INGRESS_IP"
+                      # Update frontend to use the Ingress path for WebSocket
+                      kubectl set env deployment/meme-generator-frontend -n meme-generator VITE_NATS_URL="ws://$INGRESS_IP/ws"
+                      kubectl rollout restart deployment/meme-generator-frontend -n meme-generator
+                      kubectl rollout status deployment/meme-generator-frontend -n meme-generator
+                    else
+                      echo "ERROR: Could not get Ingress IP after waiting"
+                      exit 1
+                    fi
+            
+            # Show the application URL
+            - host:
+                command:
+                  - "sh"
+                  - "-c"
+                  - |
+                    INGRESS_IP=$(kubectl get ingress meme-generator -n meme-generator -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    echo ""
+                    echo "=========================================="
+                    echo "Deployment complete!"
+                    echo "Application URL: http://$INGRESS_IP"
+                    echo "WebSocket URL: ws://$INGRESS_IP/ws"
+                    echo "=========================================="
+                    echo ""
+                    echo "Note: GKE Ingress can take 5-10 minutes to fully provision"
+                    echo ""
+
+  # Generic cloud deployment (EKS, AKS, etc) with NGINX Ingress
+  - name: cloud
+    build:
+      local:
+        push: true
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/cloud
+    deploy:
+      helm:
+        releases:
+          # Deploy NGINX Ingress Controller for non-GKE clouds
+          - name: ingress-nginx
+            remoteChart: oci://ghcr.io/nginxinc/charts/nginx-ingress
+            version: 1.5.2
+            namespace: ingress-nginx
+            createNamespace: true
+            wait: true
+            setValues:
+              controller.service.type: LoadBalancer
+              controller.watchIngressWithoutClass: true
+      kubectl:
+        hooks:
+          after:
+            # Similar hooks as GKE but for NGINX Ingress
+            - host:
+                command: ["sh", "-c", "echo 'Waiting for Ingress...' && sleep 60"]
+            - host:
+                command: 
+                  - "sh"
+                  - "-c"
+                  - |
+                    INGRESS_IP=$(kubectl get ingress meme-generator -n meme-generator -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+                    if [ -n "$INGRESS_IP" ]; then
+                      kubectl set env deployment/meme-generator-frontend -n meme-generator VITE_NATS_URL="ws://$INGRESS_IP/ws"
+                      kubectl rollout restart deployment/meme-generator-frontend -n meme-generator
+                      kubectl rollout status deployment/meme-generator-frontend -n meme-generator
+                    fi
+
+  # ngrok deployment with custom domain
+  - name: ngrok
+    build:
+      artifacts:
+        - image: vfiftyfive/meme-generator-backend
+          context: services/backend
+          docker:
+            dockerfile: Dockerfile
+          sync:
+            manual:
+              - src: "services/backend/src/**/*.rs"
+                dest: /usr/src/app/src
+              - src: "services/backend/Cargo.toml"
+                dest: /usr/src/app
+        - image: vfiftyfive/meme-generator-frontend
+          context: services/frontend
+          docker:
+            dockerfile: Dockerfile
+          sync:
+            manual:
+              - src: "services/frontend/frontend/src/**/*"
+                dest: /app/frontend/src
+      local:
+        push: true
+    manifests:
+      kustomize:
+        paths:
+          - k8s/overlays/ngrok
+      rawYaml:
+        - k8s/ngrok-operator/ngrok-ingress.yaml
+    deploy:
+      kubectl:
+        hooks:
+          after:
+            # Show the application URL
+            - host:
+                command:
+                  - "sh"
+                  - "-c"
+                  - |
+                    echo ""
+                    echo "=========================================="
+                    echo "Deployment complete!"
+                    echo "Application URL: https://nic.scaleops.ngrok.dev"
+                    echo "WebSocket URL: wss://nic.scaleops.ngrok.dev/ws"
+                    echo "=========================================="
+                    echo ""
+                    echo "Note: ngrok provides automatic TLS certificates"
+                    echo ""

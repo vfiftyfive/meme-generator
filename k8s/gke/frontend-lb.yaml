@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: meme-generator-frontend-lb
+  namespace: meme-generator
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+spec:
+  type: LoadBalancer
+  selector:
+    app: meme-generator-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http

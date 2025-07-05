@@ -1,96 +1,309 @@
 # 🎭 Meme Generator
 
-A Kubernetes demo project showcasing multi-tier auto-scaling with HPA, VPA, and KEDA.
+A production-ready Kubernetes application demonstrating modern cloud-native deployment practices with auto-scaling, multi-platform support, and real-time messaging.
+
+## 🚀 Quick Start
+
+Deploy the entire application with a single command:
+
+```bash
+# Deploy with ngrok for public access
+skaffold run --profile=ngrok
+
+# Deploy to GKE
+skaffold run --profile=gke
+
+# Deploy locally (minikube/kind)
+skaffold run --profile=local
+```
 
 ## 📋 Project Overview
 
-This monorepo contains all components for the Meme Generator application, demonstrating different Kubernetes auto-scaling strategies working together:
+This application demonstrates:
+- **Real-time WebSocket communication** via NATS JetStream
+- **Multi-platform deployment** (local, GKE, EKS, AKS)
+- **Auto-scaling** with HPA, VPA, and KEDA
+- **Platform-agnostic infrastructure** using Kustomize overlays
+- **Single-command deployment** with Skaffold
+- **Public access** via ngrok with custom domain
 
-- **Frontend**: Uses Horizontal Pod Autoscaler (HPA) based on CPU and memory utilization
-- **Backend**: Uses Kubernetes Event-Driven Autoscaling (KEDA) based on NATS message queue depth
-- **Redis**: Uses Vertical Pod Autoscaler (VPA) for automatic resource adjustment
+## 🏗️ Architecture
 
-The application demonstrates a complete message flow from user request to image generation, with comprehensive monitoring and observability.
+### System Components
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │
+│    Frontend     │────▶│   NATS with    │────▶│    Backend      │
+│   (React/TS)    │◀────│   WebSocket    │◀────│  (Rust/Tokio)   │
+│                 │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └────────┬────────┘
+                                                          │
+                              ┌─────────────────┐         │
+                              │                 │         │
+                              │      Redis      │◀────────┘
+                              │   (Caching)     │
+                              │                 │
+                              └─────────────────┘
+```
+
+### Message Flow
+
+1. **User** submits meme request via web interface
+2. **Frontend** sends message to NATS via WebSocket
+3. **NATS JetStream** persists message and delivers to backend
+4. **Backend** processes request:
+   - Checks Redis cache
+   - Calls HuggingFace API if not cached
+   - Stores result in Redis
+   - Sends response back via NATS
+5. **Frontend** receives and displays generated meme
+
+### Key Technologies
+
+- **Frontend**: React, TypeScript, Material-UI, Vite
+- **Backend**: Rust, Tokio, async-nats
+- **Messaging**: NATS with JetStream and WebSocket support
+- **Caching**: Redis (Bitnami Helm chart)
+- **Deployment**: Skaffold, Kustomize, Helm
+- **Public Access**: ngrok Kubernetes Operator
+- **Container Runtime**: Multi-platform images (ARM64 + AMD64)
 
 ## 📁 Repository Structure
 
 ```
 meme-generator/
-├── k8s/                    # Kubernetes configurations
-│   ├── backend/            # Backend deployment, KEDA ScaledObject
-│   ├── frontend/           # Frontend deployment, HPA
-│   ├── monitoring/         # Prometheus and Grafana dashboards
-│   ├── nats/               # NATS with JetStream configuration
-│   ├── operators/          # Operator deployments (VPA, KEDA, metrics-server)
-│   └── redis/              # Redis with VPA configuration
+├── k8s/                       # Kubernetes configurations
+│   ├── base/                  # Base resources (deployments, services)
+│   │   ├── namespaces.yaml    # All namespace definitions
+│   │   ├── backend-deployment.yaml
+│   │   ├── frontend-deployment.yaml
+│   │   └── ingress.yaml
+│   ├── overlays/              # Platform-specific configurations
+│   │   ├── local/             # Local development settings
+│   │   ├── gke/               # Google Kubernetes Engine
+│   │   ├── cloud/             # Generic cloud (EKS, AKS)
+│   │   └── ngrok/             # ngrok public access
+│   ├── nats/                  # NATS configuration
+│   │   └── nats-simple.yaml   # Custom NATS with WebSocket
+│   └── infrastructure.yaml    # Complete infrastructure setup
 ├── services/
-│   ├── backend/            # Rust backend service scaled by KEDA
-│   └── frontend/           # React/TypeScript frontend scaled by HPA
-├── stress/                 # Load testing tools for demonstrating auto-scaling
-└── docs/                   # Documentation
+│   ├── backend/               # Rust backend service
+│   └── frontend/              # React frontend application
+├── skaffold.yaml              # Deployment orchestration
+└── DEPLOYMENT.md              # Detailed deployment guide
 ```
 
-## ⚖️ Auto-scaling Strategy
+## 🚀 Deployment Guide
 
-This application demonstrates three different auto-scaling approaches working together:
+### Prerequisites
 
-1. **Frontend (HPA)**: Scales horizontally based on CPU/memory metrics
-   - Very sensitive CPU threshold (30%) to trigger scaling with minimal load
-   - Memory threshold at 50%
-   - Quick scale-up (0s stabilization window)
-   - Conservative scale-down (5-minute stabilization window)
-   - Resource configuration: 10m CPU request, 100m CPU limit, 64Mi memory request, 128Mi memory limit
+1. **Kubernetes Cluster**
+   - Local: Docker Desktop, minikube, or kind
+   - Cloud: GKE, EKS, or AKS cluster
+   
+2. **Required Tools**
+   ```bash
+   # Install Skaffold
+   curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+   sudo install skaffold /usr/local/bin/
+   
+   # Install kubectl (if not already installed)
+   curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+   sudo install kubectl /usr/local/bin/
+   ```
 
-2. **Backend (KEDA)**: Scales based on NATS message queue depth
-   - Scales based on NATS JetStream message queue depth
-   - Triggers when 5+ messages are pending (activates at just 1 message)
-   - Can scale to zero when no messages are present
-   - Resource configuration: 50m CPU request, 500m CPU limit, 64Mi memory request, 256Mi memory limit
+3. **For Public Access (ngrok)**
+   - ngrok account with API key
+   - Install ngrok operator:
+     ```bash
+     helm repo add ngrok https://ngrok.github.io/ngrok-operator
+     helm install ngrok-operator ngrok/ngrok-operator \
+       --namespace ngrok-operator \
+       --create-namespace \
+       --set credentials.apiKey=$NGROK_API_KEY \
+       --set credentials.authtoken=$NGROK_AUTHTOKEN
+     ```
 
-3. **Redis (VPA)**: Automatically adjusts CPU and memory resources
-   - Automatically adjusts CPU and memory resources based on usage patterns
-   - Min resources: 100m CPU, 512Mi memory
-   - Max resources: 1000m CPU, 1Gi memory
+### Deployment Profiles
 
-This configuration ensures the system can quickly scale up with minimal load (just a couple of meme generations) and efficiently manage resources.
+#### 1. Local Development
+```bash
+# Deploy locally (no image push required)
+skaffold run --profile=local
 
-## 🔄 Message Flow Architecture
+# Development mode with hot reload
+skaffold dev --profile=local
+```
 
-The application implements a complete message flow between components:
+#### 2. Public Access with ngrok
+```bash
+# Deploy with ngrok (requires Docker Hub access)
+skaffold run --profile=ngrok
 
-![Meme Generator Architecture](docs/meme-generator-architecture.png)
+# Access at: https://nic.scaleops.ngrok.dev
+```
 
-1. **Frontend**: React/TypeScript application with Material-UI
-   - Connects to NATS via WebSockets for communication
-   - Sends meme generation requests with unique IDs
-   - Subscribes to response and error channels
+#### 3. Google Kubernetes Engine (GKE)
+```bash
+# Deploy to GKE
+skaffold run --profile=gke
 
-2. **NATS JetStream**: Message broker with persistent streams
-   - Handles `meme.request`, `meme.response`, and `meme.response.error` subjects
-   - Provides metrics for queue depth and message processing rates
-   - Triggers KEDA scaling based on pending message count
+# Uses GCE Ingress (takes 5-10 minutes to provision)
+```
 
-3. **Backend**: Rust application for image generation
-   - Processes requests from NATS queue asynchronously
-   - Checks Redis cache before calling external APIs
-   - Calls Hugging Face API with appropriate model selection
-   - Caches results in Redis for improved performance
+#### 4. Other Cloud Providers (EKS/AKS)
+```bash
+# Deploy with NGINX Ingress
+skaffold run --profile=cloud
+```
 
-4. **Monitoring**: Comprehensive metrics and dashboards
-   - Grafana dashboards for visualizing auto-scaling behavior
-   - Prometheus metrics for NATS, Kubernetes, and application components
-   - Custom panels for message rates and cumulative counts
+### Clean Up
+```bash
+# Delete all resources
+skaffold delete --profile=<profile-name>
+```
 
-## 🚀 Getting Started
+## 🔧 Configuration
 
-1. **Infrastructure Setup**: See [docs/setup.md](docs/setup.md)
-2. **Auto-scaling Guide**: See [docs/auto-scaling.md](docs/auto-scaling.md)
-3. **Testing the Application**: See [docs/testing.md](docs/testing.md)
-4. **Load Testing**: See [stress/README.md](stress/README.md)
+### Environment Variables
 
-## ⚙️ Prerequisites
+**Backend** (`HF_API_TOKEN` required):
+```bash
+# Create secret for HuggingFace API token
+kubectl create secret generic meme-generator-secrets \
+  -n meme-generator \
+  --from-literal=HF_API_TOKEN=your-token-here
+```
 
-- Kubernetes cluster (minikube, kind, or cloud provider)
-- kubectl
-- Helm (optional - installed by setup script if missing)
-- Git
+**Frontend** (automatically configured):
+- `VITE_NATS_URL`: WebSocket URL (dynamically set based on deployment)
+- `VITE_REQUEST_SUBJECT`: `meme.request`
+- `VITE_RESPONSE_SUBJECT`: `meme.response`
+
+### Custom Domain (ngrok)
+
+Edit `k8s/ngrok-operator/ngrok-ingress.yaml`:
+```yaml
+spec:
+  rules:
+  - host: your-domain.ngrok.dev  # Replace with your domain
+```
+
+## 🏗️ How It Works
+
+### 1. Infrastructure Deployment
+
+The deployment process ensures proper ordering:
+
+1. **Namespaces** are created first
+2. **NATS** is deployed with WebSocket enabled
+3. **Redis** is deployed via Helm
+4. **Application** components are deployed
+5. **Init containers** ensure dependencies are ready
+
+### 2. Init Containers
+
+The backend uses init containers to wait for dependencies:
+
+```yaml
+initContainers:
+  - name: wait-for-nats
+    image: busybox:1.36
+    command: ['sh', '-c', 'until nc -z nats.messaging.svc.cluster.local 4222; do sleep 2; done']
+  - name: wait-for-redis
+    image: busybox:1.36
+    command: ['sh', '-c', 'until nc -z redis-master.cache.svc.cluster.local 6379; do sleep 2; done']
+```
+
+### 3. WebSocket Configuration
+
+NATS is configured with WebSocket support:
+
+```yaml
+websocket {
+  port: 8080
+  no_tls: true
+}
+```
+
+The frontend connects via WebSocket through the Ingress at `/ws` path.
+
+### 4. Auto-scaling
+
+- **Frontend (HPA)**: Scales based on CPU/memory (30%/50% thresholds)
+- **Backend (KEDA)**: Scales based on NATS queue depth (5+ messages)
+- **Redis (VPA)**: Automatically adjusts resources based on usage
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Backend CrashLoopBackOff**
+   - Check NATS is running: `kubectl get pods -n messaging`
+   - Check Redis is running: `kubectl get pods -n cache`
+   - View logs: `kubectl logs -n meme-generator deploy/meme-backend`
+
+2. **WebSocket Connection Failed**
+   - Verify NATS has WebSocket enabled: `kubectl get svc -n messaging`
+   - Check ingress configuration: `kubectl get ingress -A`
+
+3. **Image Pull Errors**
+   - For ngrok profile: Ensure Docker Hub login
+   - For local profile: Images should be available locally
+
+4. **Namespace Terminating**
+   ```bash
+   # Force delete stuck namespace
+   kubectl delete namespace <name> --force --grace-period=0
+   ```
+
+### Debugging Commands
+
+```bash
+# Check all pods
+kubectl get pods -A | grep -E "(meme|nats|redis)"
+
+# View backend logs
+kubectl logs -n meme-generator -l app=meme-backend -f
+
+# Check NATS connectivity
+kubectl port-forward -n messaging svc/nats 8222:8222
+curl http://localhost:8222/varz
+
+# Test WebSocket locally
+kubectl port-forward -n messaging svc/nats-websocket 8090:8080
+# Open test-ws-final.html in browser
+```
+
+## 📈 Load Testing
+
+Test auto-scaling behavior:
+
+```bash
+# Generate load on frontend (HPA test)
+kubectl run -i --tty load-generator --rm --image=busybox --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://meme-generator-frontend.meme-generator/; done"
+
+# Generate messages for backend (KEDA test)
+cd stress/
+npm install
+npm run stress -- --messages 100 --concurrent 10
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test with `skaffold dev`
+5. Submit a pull request
+
+## 📝 License
+
+MIT License - see LICENSE file for details
+
+## 🆘 Support
+
+- GitHub Issues: Report bugs or request features
+- Documentation: Check `/docs` folder for detailed guides
+- Examples: See `/stress` folder for testing examples

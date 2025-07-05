@@ -9,7 +9,7 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
-    - host: beagle-causal-slightly.ngrok-free.app
+    - host: meme-generator.local
       http:
         paths:
           - path: /

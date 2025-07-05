@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-generator-frontend
+  namespace: meme-generator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meme-generator-frontend
+  template:
+    metadata:
+      labels:
+        app: meme-generator-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: vfiftyfive/meme-generator-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            - name: VITE_NATS_URL
+              value: "ws://nats-websocket.messaging.svc.cluster.local:8080"
+            - name: VITE_REQUEST_SUBJECT
+              value: "meme.request"
+            - name: VITE_RESPONSE_SUBJECT
+              value: "meme.response"

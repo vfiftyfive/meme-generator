@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-generator-frontend
+  namespace: meme-generator
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          env:
+            - name: VITE_NATS_URL
+              value: "DYNAMIC_WEBSOCKET_URL"  # Will be replaced by init script

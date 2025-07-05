@@ -1,17 +1,23 @@
 # NATS Helm values for Meme Battle Royale demo
 # Disable cluster mode for simplicity in demo
+
+# Disable authentication for demo purposes
+auth:
+  enabled: false
+
+# Enable JetStream
+jetstream:
+  enabled: true
+  maxMemory: 1G
+  storeDirectory: /data
+
+# Enable persistence for JetStream
+persistence:
+  enabled: true
+  size: 1Gi
+
+# Configure NATS
 config:
-  # Enable JetStream
-  jetstream:
-    enabled: true
-    fileStore:
-      enabled: true
-      dir: /data
-      pvc:
-        enabled: true
-        size: 1Gi
-        name: nats-js-pvc
-  
   # Enable websocket
   websocket:
     enabled: true

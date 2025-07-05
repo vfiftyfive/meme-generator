@@ -5,7 +5,7 @@ metadata:
   namespace: meme-generator
 spec:
   scaleTargetRef:
-    name: meme-generator
+    name: meme-backend
   minReplicaCount: 1
   maxReplicaCount: 10
   pollingInterval: 3 # Check every 3 seconds

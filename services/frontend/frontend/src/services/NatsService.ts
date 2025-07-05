@@ -45,12 +45,11 @@ class NatsService {
       window.location.hostname === '127.0.0.1';
 
     // Use values from runtime config with fallbacks
-    // If in local development, use localhost for NATS
-    if (isLocalDevelopment) {
-      this.serverUrl = 'ws://localhost:8081';
-      console.log('💻 DEVELOPMENT MODE: Using localhost:8081 for NATS');
-    } else {
-      this.serverUrl = config.NATS_URL || 'ws://nats.messaging.svc.cluster.local:8080';
+    // Always use the config value if provided, even in local development
+    this.serverUrl = config.NATS_URL || (isLocalDevelopment ? 'ws://localhost:8081' : 'ws://nats.messaging.svc.cluster.local:8080');
+    
+    if (isLocalDevelopment && !config.NATS_URL) {
+      console.log('💻 DEVELOPMENT MODE: Using localhost:8081 for NATS (override with RUNTIME_CONFIG.NATS_URL)');
     }
 
     this.requestSubject = config.REQUEST_SUBJECT || 'meme.request';
@@ -67,6 +66,35 @@ class NatsService {
   }
 
   /**
+   * Test WebSocket connectivity before NATS connection
+   */
+  async testWebSocketConnection(): Promise<boolean> {
+    return new Promise((resolve) => {
+      console.log('🧪 Testing raw WebSocket connection to:', this.serverUrl);
+      
+      const ws = new WebSocket(this.serverUrl);
+      const timeout = setTimeout(() => {
+        console.error('❌ WebSocket connection timeout');
+        ws.close();
+        resolve(false);
+      }, 5000);
+
+      ws.onopen = () => {
+        console.log('✅ Raw WebSocket connection successful');
+        clearTimeout(timeout);
+        ws.close();
+        resolve(true);
+      };
+
+      ws.onerror = (error) => {
+        console.error('❌ Raw WebSocket connection error:', error);
+        clearTimeout(timeout);
+        resolve(false);
+      };
+    });
+  }
+
+  /**
    * Connect to the NATS server
    * @returns Promise that resolves to true if connected successfully
    */
@@ -79,10 +107,25 @@ class NatsService {
 
       console.log('🔄 Attempting to connect to NATS server:', this.serverUrl);
 
+      // First test raw WebSocket
+      const wsTest = await this.testWebSocketConnection();
+      if (!wsTest) {
+        console.error('❌ Raw WebSocket test failed, NATS connection will likely fail');
+      }
+
+      // Add debug logging for connection attempt
+      console.log('📡 Connection config:', {
+        servers: this.serverUrl,
+        timeout: 30000,
+        headers: window.location.hostname,
+        protocol: window.location.protocol
+      });
 
       this.connection = await connect({
         servers: this.serverUrl,
-        timeout: 30000  // 30 second timeout for slower network conditions
+        timeout: 30000,  // 30 second timeout for slower network conditions
+        debug: true,  // Enable debug mode
+        verbose: true  // Enable verbose logging
       });
 
       console.log('✅ NATS connection successful');

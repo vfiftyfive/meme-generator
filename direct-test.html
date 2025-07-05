@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct NATS Test - Core vs JetStream</title>
+</head>
+<body>
+    <h1>NATS Core vs JetStream Test</h1>
+    <p>Access this at: http://meme-generator.local/direct-test.html</p>
+    
+    <button onclick="testCoreNats()">Test Core NATS Publish</button>
+    <button onclick="monitorBackend()">Monitor Backend Logs</button>
+    
+    <h2>Instructions:</h2>
+    <ol>
+        <li>Open browser console (F12)</li>
+        <li>Click "Test Core NATS Publish"</li>
+        <li>Check backend logs in another terminal: kubectl logs -n meme-generator deploy/meme-generator -f</li>
+    </ol>
+    
+    <pre id="output"></pre>
+    
+    <script type="module">
+    function log(msg) {
+        const output = document.getElementById('output');
+        const timestamp = new Date().toISOString();
+        output.textContent += `[${timestamp}] ${msg}\n`;
+        console.log(msg);
+    }
+    
+    window.testCoreNats = async function() {
+        log('Testing Core NATS publish to meme.request...');
+        
+        try {
+            // Import NATS library
+            const { connect, JSONCodec } = await import('https://unpkg.com/nats.ws@1.29.5/esm/nats.js');
+            
+            // Connect to NATS
+            const nc = await connect({ 
+                servers: 'ws://nats.meme-generator.local',
+                verbose: true
+            });
+            
+            log('Connected to NATS!');
+            
+            // Create codec
+            const jc = JSONCodec();
+            
+            // Subscribe to responses
+            const sub = nc.subscribe('meme.response');
+            (async () => {
+                for await (const m of sub) {
+                    log('Response received: ' + JSON.stringify(jc.decode(m.data)));
+                }
+            })();
+            
+            // Publish test message
+            const msg = {
+                id: 'test-' + Date.now(),
+                prompt: 'direct test message',
+                fast_mode: true,
+                small_image: true
+            };
+            
+            log('Publishing: ' + JSON.stringify(msg));
+            nc.publish('meme.request', jc.encode(msg));
+            
+            log('Message published! Check backend logs...');
+            
+            // Keep connection alive
+            setTimeout(async () => {
+                await nc.close();
+                log('Connection closed.');
+            }, 30000);
+            
+        } catch (error) {
+            log('Error: ' + error);
+        }
+    }
+    
+    window.monitorBackend = function() {
+        log('Run this command in terminal:');
+        log('kubectl logs -n meme-generator deploy/meme-generator -f | grep -E "(Received|message|request_id)"');
+    }
+    </script>
+</body>
+</html>

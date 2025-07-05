@@ -1,0 +1,36 @@
+# Official NATS Helm chart values with WebSocket support
+config:
+  cluster:
+    enabled: true
+    replicas: 1
+    
+  nats:
+    # Enable JetStream
+    jetstream:
+      enabled: true
+      
+      memStorage:
+        enabled: true
+        size: 1Gi
+        
+      fileStorage:
+        enabled: true
+        size: 2Gi
+        storageDirectory: /data
+    
+    # Disable auth for demo
+    authorization:
+      enabled: false
+      
+    # Enable WebSocket
+    websocket:
+      enabled: true
+      port: 8080
+      no_tls: true
+
+# Service configuration to expose WebSocket port
+service:
+  ports:
+    websocket:
+      enabled: true
+      port: 8080

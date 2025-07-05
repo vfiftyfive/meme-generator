@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ${DOCKER_REGISTRY}/meme-generator-frontend:latest
-          imagePullPolicy: Always
+          image: meme-generator-frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
               name: http
@@ -44,24 +44,29 @@ spec:
             periodSeconds: 10
           env:
             - name: VITE_NATS_URL
-              value: "${NATS_URL}"
+              value: "ws://meme-generator.local/nats"
             - name: VITE_REQUEST_SUBJECT
               value: "meme.request"
             - name: VITE_RESPONSE_SUBJECT
               value: "meme.response"
----
-apiVersion: v1
-kind: Service
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
   name: meme-generator-frontend
   namespace: meme-generator
-  labels:
-    app: meme-generator-frontend
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
-  ports:
-    - port: 80
-      targetPort: 80
-      protocol: TCP
-      name: http
-  selector:
-    app: meme-generator-frontend
+  rules:
+    - host: beagle-causal-slightly.ngrok-free.app # Change this as needed
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: meme-generator-frontend
+                port:
+                  number: 80

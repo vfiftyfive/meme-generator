@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NATS WebSocket Test</title>
+</head>
+<body>
+    <h1>NATS WebSocket Test</h1>
+    <div id="status">Connecting...</div>
+    <script>
+        const ws = new WebSocket('ws://localhost:8080');
+        
+        ws.onopen = () => {
+            document.getElementById('status').innerHTML = 'Connected!';
+            console.log('WebSocket connected');
+        };
+        
+        ws.onerror = (error) => {
+            document.getElementById('status').innerHTML = 'Error: ' + error;
+            console.error('WebSocket error:', error);
+        };
+        
+        ws.onclose = () => {
+            document.getElementById('status').innerHTML = 'Disconnected';
+            console.log('WebSocket closed');
+        };
+    </script>
+</body>
+</html>

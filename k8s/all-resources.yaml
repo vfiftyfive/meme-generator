@@ -1,0 +1,22 @@
+# All resources in proper order
+---
+# Namespaces first
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: meme-generator
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: messaging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cache
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: operators

@@ -254,7 +254,9 @@ async fn main() -> Result<()> {
     // We use NATS for its simplicity, performance, and reliability
     info!("Connecting to NATS at {}", config.nats_url);
     let nats = async_nats::connect(&config.nats_url).await?;
+    info!("NATS connection established successfully");
     let js = jetstream::new(nats);
+    info!("Setting up JetStream with stream: {} and subject: {}", config.nats_stream, config.request_subject);
 
     // Ensure stream exists - Creating it if needed
     // The stream configuration uses:
@@ -262,7 +264,7 @@ async fn main() -> Result<()> {
     // - WorkQueue retention to process each message once
     let stream_config = jetstream::stream::Config {
         name: config.nats_stream.clone(),
-        subjects: vec![format!("{}.>", config.request_subject)],
+        subjects: vec![config.request_subject.clone()], // Changed to exact subject
         storage: jetstream::stream::StorageType::File,
         retention: jetstream::stream::RetentionPolicy::WorkQueue,
         ..Default::default()
@@ -271,14 +273,16 @@ async fn main() -> Result<()> {
     // Get or create stream - This approach ensures the service is self-provisioning
     // and doesn't require external setup beyond infrastructure deployment
     let mut stream = match js.get_stream(&config.nats_stream).await {
-        Ok(stream) => stream,
-        Err(_) => js.create_stream(stream_config).await?,
+        Ok(stream) => {
+            info!("Found existing stream: {}", config.nats_stream);
+            stream
+        },
+        Err(_) => {
+            info!("Creating new stream: {} for subject: {}", config.nats_stream, config.request_subject);
+            js.create_stream(stream_config).await?
+        }
     };
-
-    info!(
-        "Connected to NATS stream {}",
-        stream.info().await?.config.name
-    );
+    info!("Connected to NATS stream {}", config.nats_stream);
 
     // Connect to Redis - Used for caching generated images
     // This improves response times and reduces API costs for repeated requests
@@ -322,7 +326,7 @@ async fn main() -> Result<()> {
         durable_name: Some(config.nats_consumer.clone()),
         deliver_policy: jetstream::consumer::DeliverPolicy::All,
         ack_policy: jetstream::consumer::AckPolicy::Explicit,
-        filter_subjects: vec![format!("{}.>", config.request_subject)],
+        filter_subjects: vec![config.request_subject.clone()], // Changed to exact subject
         max_deliver: 3,
         ack_wait: Duration::from_secs(60),
         ..Default::default()
@@ -335,6 +339,7 @@ async fn main() -> Result<()> {
     };
 
     info!("NATS consumer ready");
+    info!("Creating consumer for subject: {}", config.request_subject);
 
     // Start processing messages - This will run until the service is terminated
     // All request handling happens inside this function
@@ -361,10 +366,16 @@ async fn process_messages(
     let mut messages = consumer.messages().await?;
 
     info!("Started processing messages");
+    
+    let mut message_count = 0;
+    info!("Waiting for messages on subject: {}", state.lock().await.config.request_subject);
 
     // Main message processing loop - runs indefinitely until the service is stopped
     // Using a while-let pattern with async iterator is idiomatic for stream processing
     while let Some(message) = messages.next().await {
+        message_count += 1;
+        info!("Received message #{}", message_count);
+        debug!("Message #{}", message_count);
         // Handle NATS message retrieval errors gracefully
         // This prevents network issues from crashing the entire service
         let message = match message {

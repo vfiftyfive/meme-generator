@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: meme-backend
+  namespace: meme-generator
+spec:
+  selector:
+    app: meme-backend
+  ports:
+    - port: 9090
+      targetPort: 9090
+      name: metrics
+  type: ClusterIP

@@ -1,0 +1,65 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: meme-generator-gke
+build:
+  artifacts:
+    - image: gcr.io/scaleops-platform/meme-generator-backend
+      context: services/backend
+      docker:
+        dockerfile: Dockerfile
+    - image: gcr.io/scaleops-platform/meme-generator-frontend
+      context: services/frontend
+      docker:
+        dockerfile: Dockerfile
+  local:
+    push: true
+    useBuildkit: true
+  tagPolicy:
+    gitCommit: {}
+
+deploy:
+  kubectl:
+    hooks:
+      before:
+        - host:
+            command: ["sh", "-c", "kubectl create namespace meme-generator --dry-run=client -o yaml | kubectl apply -f -"]
+        - host:
+            command: ["sh", "-c", "kubectl create namespace messaging --dry-run=client -o yaml | kubectl apply -f -"]
+        - host:
+            command: ["sh", "-c", "kubectl create namespace cache --dry-run=client -o yaml | kubectl apply -f -"]
+        - host:
+            command: ["sh", "-c", "kubectl create namespace operators --dry-run=client -o yaml | kubectl apply -f -"]
+        - host:
+            command: ["sh", "-c", "kubectl get secret meme-generator-secrets -n meme-generator || kubectl apply -f k8s/backend/secret.yaml"]
+
+manifests:
+  rawYaml:
+    # Backend resources
+    - k8s/gke/backend-deployment.yaml
+    - k8s/backend/service.yaml
+    
+    # Frontend resources
+    - k8s/gke/frontend-deployment.yaml
+    - k8s/frontend/service.yaml
+    
+    # GKE LoadBalancer services
+    - k8s/gke/frontend-lb.yaml
+    - k8s/gke/nats-websocket-lb.yaml
+
+portForward:
+  - resourceType: service
+    resourceName: meme-generator-frontend
+    namespace: meme-generator
+    port: 80
+    localPort: 8080
+  - resourceType: service
+    resourceName: nats
+    namespace: messaging
+    port: 8222
+    localPort: 8222
+  - resourceType: service
+    resourceName: meme-backend
+    namespace: meme-generator  
+    port: 9090
+    localPort: 9090

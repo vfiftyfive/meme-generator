@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+patchesStrategicMerge:
+  # GKE-specific Ingress annotations
+  - ingress-patch.yaml
+  # Frontend environment configuration
+  - frontend-env-patch.yaml
+
+# Use Docker Hub images or your registry
+images:
+  - name: meme-generator-backend
+    newName: vfiftyfive/meme-generator-backend
+    newTag: latest
+  - name: meme-generator-frontend  
+    newName: vfiftyfive/meme-generator-frontend
+    newTag: latest

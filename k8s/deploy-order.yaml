@@ -1,0 +1,22 @@
+# This file ensures proper deployment order
+# 1. First create namespaces
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: meme-generator
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: messaging
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cache
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: operators

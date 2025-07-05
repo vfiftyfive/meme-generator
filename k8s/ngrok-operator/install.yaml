@@ -1,0 +1,20 @@
+# ngrok Operator Installation
+# This provides DNS resolution and public access to the application
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ngrok-operator
+---
+# Create secret for ngrok credentials
+# Replace with your actual ngrok credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ngrok-credentials
+  namespace: ngrok-operator
+type: Opaque
+stringData:
+  # Get these from https://dashboard.ngrok.com
+  apiKey: "YOUR_NGROK_API_KEY"
+  authtoken: "YOUR_NGROK_AUTHTOKEN"

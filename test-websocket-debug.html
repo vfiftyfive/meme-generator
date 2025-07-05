@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Debug</title>
+</head>
+<body>
+    <h1>WebSocket Connection Debug</h1>
+    <button onclick="testIngressWebSocket()">Test Ingress WebSocket</button>
+    <button onclick="testPortForward()">Test Port Forward</button>
+    <button onclick="testWithFetch()">Test HTTP First</button>
+    <pre id="output"></pre>
+    
+    <script>
+    const output = document.getElementById('output');
+    
+    function log(msg, level = 'info') {
+        const timestamp = new Date().toISOString();
+        const prefix = {
+            'info': '📘',
+            'success': '✅',
+            'error': '❌',
+            'warn': '⚠️'
+        }[level] || '📘';
+        
+        const line = `[${timestamp}] ${prefix} ${msg}\n`;
+        output.textContent += line;
+        console.log(msg);
+    }
+    
+    async function testWithFetch() {
+        log('Testing HTTP connection first...');
+        
+        try {
+            // Test ingress HTTP
+            const ingressUrl = 'http://nats.meme-generator.local';
+            log(`Fetching ${ingressUrl}...`);
+            const response = await fetch(ingressUrl, { mode: 'no-cors' });
+            log('Ingress HTTP accessible', 'success');
+        } catch (e) {
+            log(`Ingress HTTP error: ${e}`, 'error');
+        }
+        
+        try {
+            // Test port forward HTTP
+            const portUrl = 'http://localhost:8081';
+            log(`Fetching ${portUrl}...`);
+            const response2 = await fetch(portUrl, { mode: 'no-cors' });
+            log('Port forward HTTP accessible', 'success');
+        } catch (e) {
+            log(`Port forward HTTP error: ${e}`, 'error');
+        }
+    }
+    
+    function testWebSocket(url, label) {
+        log(`\n=== Testing ${label} ===`);
+        log(`URL: ${url}`);
+        
+        try {
+            const ws = new WebSocket(url);
+            let pingInterval;
+            
+            ws.onopen = () => {
+                log('WebSocket opened', 'success');
+                log('Sending NATS CONNECT...');
+                
+                const connectMsg = {
+                    verbose: true,
+                    pedantic: false,
+                    tls_required: false,
+                    name: "debug-client",
+                    lang: "javascript",
+                    version: "1.0.0",
+                    protocol: 1
+                };
+                
+                ws.send(`CONNECT ${JSON.stringify(connectMsg)}\r\n`);
+                log('CONNECT sent');
+                
+                // Send PING every 5 seconds
+                pingInterval = setInterval(() => {
+                    log('Sending PING...');
+                    ws.send('PING\r\n');
+                }, 5000);
+            };
+            
+            ws.onmessage = (event) => {
+                log(`Received: ${event.data.trim()}`, 'success');
+                
+                // If we get +OK, try subscribing and publishing
+                if (event.data.includes('+OK')) {
+                    log('Got +OK, subscribing to meme.response...');
+                    ws.send('SUB meme.response 1\r\n');
+                    
+                    setTimeout(() => {
+                        const testMsg = {
+                            id: `${label}-${Date.now()}`,
+                            prompt: 'test meme',
+                            fast_mode: true,
+                            small_image: true
+                        };
+                        const json = JSON.stringify(testMsg);
+                        const pubCmd = `PUB meme.request ${json.length}\r\n${json}\r\n`;
+                        
+                        log(`Publishing: ${json}`);
+                        ws.send(pubCmd);
+                    }, 500);
+                }
+                
+                // Handle PONG
+                if (event.data.includes('PONG')) {
+                    log('Got PONG', 'success');
+                }
+            };
+            
+            ws.onerror = (error) => {
+                log(`WebSocket error: ${error}`, 'error');
+                console.error('Full error:', error);
+            };
+            
+            ws.onclose = (event) => {
+                log(`WebSocket closed: code=${event.code}, reason=${event.reason || 'none'}`, 'warn');
+                if (pingInterval) clearInterval(pingInterval);
+            };
+            
+        } catch (error) {
+            log(`Exception creating WebSocket: ${error}`, 'error');
+        }
+    }
+    
+    function testIngressWebSocket() {
+        testWebSocket('ws://nats.meme-generator.local', 'Ingress');
+    }
+    
+    function testPortForward() {
+        // First restart port forwarding with explicit protocol handling
+        log('Note: Make sure port forwarding is running on 8081', 'warn');
+        testWebSocket('ws://localhost:8081', 'Port-Forward');
+    }
+    </script>
+</body>
+</html>
