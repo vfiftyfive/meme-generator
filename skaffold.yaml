@@ -98,8 +98,10 @@ profiles:
         port: 8080
         localPort: 8090
 
-  # GKE deployment with Ingress
+  # GKE deployment with Ingress and External DNS
   - name: gke
+    activation:
+      - env: DOMAIN  # Activate when DOMAIN env var is set
     build:
       artifacts:
         - image: vfiftyfive/meme-generator-backend
@@ -140,19 +142,40 @@ profiles:
                   - "sh"
                   - "-c"
                   - |
+                    # Update ingress and frontend with actual domain if provided
+                    if [ -n "$DOMAIN" ]; then
+                      echo "Configuring ingress for domain: $DOMAIN"
+                      
+                      # Update the ingress with the actual domain
+                      kubectl patch ingress meme-generator -n meme-generator --type=json \
+                        -p='[
+                          {"op": "replace", "path": "/spec/rules/0/host", "value": "meme.'$DOMAIN'"},
+                          {"op": "replace", "path": "/metadata/annotations/external-dns.alpha.kubernetes.io~1hostname", "value": "meme.'$DOMAIN'"}
+                        ]' || true
+                      
+                      # Update frontend WebSocket URL
+                      kubectl set env deployment/meme-generator-frontend -n meme-generator \
+                        VITE_NATS_URL="wss://meme.$DOMAIN/ws"
+                      kubectl rollout restart deployment/meme-generator-frontend -n meme-generator
+                      kubectl rollout status deployment/meme-generator-frontend -n meme-generator
+                    fi
+                    
+                    # Get the ingress IP
                     INGRESS_IP=$(kubectl get ingress meme-generator -n meme-generator -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
                     if [ -z "$INGRESS_IP" ]; then
-                      echo "Warning: Ingress IP not ready yet. Waiting more..."
+                      echo "Waiting for Ingress IP..."
                       sleep 30
                       INGRESS_IP=$(kubectl get ingress meme-generator -n meme-generator -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
                     fi
                     
                     if [ -n "$INGRESS_IP" ]; then
                       echo "Ingress IP: $INGRESS_IP"
-                      # Update frontend to use the Ingress path for WebSocket
-                      kubectl set env deployment/meme-generator-frontend -n meme-generator VITE_NATS_URL="ws://$INGRESS_IP/ws"
-                      kubectl rollout restart deployment/meme-generator-frontend -n meme-generator
-                      kubectl rollout status deployment/meme-generator-frontend -n meme-generator
+                      if [ -z "$DOMAIN" ]; then
+                        # No domain provided, use IP directly
+                        kubectl set env deployment/meme-generator-frontend -n meme-generator VITE_NATS_URL="ws://$INGRESS_IP/ws"
+                        kubectl rollout restart deployment/meme-generator-frontend -n meme-generator
+                        kubectl rollout status deployment/meme-generator-frontend -n meme-generator
+                      fi
                     else
                       echo "ERROR: Could not get Ingress IP after waiting"
                       exit 1
@@ -168,8 +191,16 @@ profiles:
                     echo ""
                     echo "=========================================="
                     echo "Deployment complete!"
-                    echo "Application URL: http://$INGRESS_IP"
-                    echo "WebSocket URL: ws://$INGRESS_IP/ws"
+                    if [ -n "$DOMAIN" ]; then
+                      echo "Application URL: https://meme.$DOMAIN"
+                      echo "WebSocket URL: wss://meme.$DOMAIN/ws"
+                      echo ""
+                      echo "Note: DNS propagation may take a few minutes"
+                      echo "Ingress IP: $INGRESS_IP"
+                    else
+                      echo "Application URL: http://$INGRESS_IP"
+                      echo "WebSocket URL: ws://$INGRESS_IP/ws"
+                    fi
                     echo "=========================================="
                     echo ""
                     echo "Note: GKE Ingress can take 5-10 minutes to fully provision"

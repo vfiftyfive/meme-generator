@@ -1,0 +1,41 @@
+# Config Connector resources for Cloud DNS
+# First install Config Connector: https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSManagedZone
+metadata:
+  name: meme-generator-zone
+  namespace: config-connector
+spec:
+  description: "DNS zone for meme generator application"
+  dnsName: "YOUR_DOMAIN.COM."  # Replace with your domain (note the trailing dot)
+  resourceID: meme-generator-zone
+---
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: meme-generator-a-record
+  namespace: config-connector
+spec:
+  name: "meme.YOUR_DOMAIN.COM."  # Replace with your subdomain
+  type: "A"
+  ttl: 300
+  managedZoneRef:
+    name: meme-generator-zone
+  rrdatas:
+    - "INGRESS_IP"  # This will be replaced by external-dns automatically
+---
+# Optional: CNAME for www subdomain
+apiVersion: dns.cnrm.cloud.google.com/v1beta1
+kind: DNSRecordSet
+metadata:
+  name: meme-generator-www-cname
+  namespace: config-connector
+spec:
+  name: "www.meme.YOUR_DOMAIN.COM."  # Replace with your subdomain
+  type: "CNAME"
+  ttl: 300
+  managedZoneRef:
+    name: meme-generator-zone
+  rrdatas:
+    - "meme.YOUR_DOMAIN.COM."

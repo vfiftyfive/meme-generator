@@ -1,0 +1,50 @@
+# External DNS configuration for Google Cloud DNS
+provider: google
+google:
+  project: "YOUR_GCP_PROJECT_ID"  # Replace with your GCP project ID
+  
+# Only manage records for our specific domain
+domainFilters:
+  - "YOUR_DOMAIN.COM"  # Replace with your domain
+
+# Create TXT records for ownership
+txtOwnerId: "meme-generator"
+
+# Only process our ingresses
+sources:
+  - ingress
+
+# Namespace to watch (empty = all namespaces)
+namespace: ""
+
+# Annotation filter - only process ingresses with this annotation
+annotationFilter: "kubernetes.io/ingress.class=gce"
+
+# Policy for DNS records
+policy: sync  # sync = create and delete records as needed
+
+# Metrics
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+# RBAC
+rbac:
+  create: true
+
+# Service Account
+serviceAccount:
+  create: true
+  name: external-dns
+  annotations:
+    # For Workload Identity
+    iam.gke.io/gcp-service-account: "external-dns@YOUR_PROJECT_ID.iam.gserviceaccount.com"
+
+# Security Context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]

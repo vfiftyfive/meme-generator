@@ -124,11 +124,28 @@ skaffold dev --profile=local
 ```
 
 #### 2. Google Kubernetes Engine (GKE)
+
+**Option A: With Custom Domain (Recommended)**
 ```bash
-# Deploy to GKE
+# First, set up external-dns (one-time setup)
+export GCP_PROJECT_ID="your-project-id"
+export DOMAIN="yourdomain.com"
+export CLUSTER_NAME="your-cluster-name"
+cd k8s/external-dns && ./setup.sh
+
+# Deploy with your domain
+DOMAIN=yourdomain.com skaffold run --profile=gke
+
+# Access at: https://meme.yourdomain.com
+```
+
+**Option B: IP-only Access**
+```bash
+# Deploy without domain
 skaffold run --profile=gke
 
 # Uses GCE Ingress (takes 5-10 minutes to provision)
+# Access via the IP address shown in output
 ```
 
 #### 4. Other Cloud Providers (EKS/AKS)
@@ -144,6 +161,31 @@ skaffold delete --profile=<profile-name>
 ```
 
 ## 🔧 Configuration
+
+### DNS Configuration (GKE with Cloud DNS)
+
+The application supports automatic DNS configuration using external-dns with Google Cloud DNS:
+
+1. **Prerequisites**:
+   - A domain you own
+   - GCP project with Cloud DNS API enabled
+   - GKE cluster with Workload Identity enabled
+
+2. **Setup Process**:
+   ```bash
+   # Run the setup script
+   cd k8s/external-dns
+   ./setup.sh
+   ```
+
+3. **What it does**:
+   - Creates a Cloud DNS zone for your domain
+   - Sets up external-dns to automatically manage DNS records
+   - Configures Workload Identity for secure access
+   - Updates ingress resources with your domain
+
+4. **Alternative: Config Connector**:
+   If you prefer using Config Connector, apply the resources in `k8s/config-connector/`
 
 ### Environment Variables
 

@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+  annotations:
+    # GKE ingress controller
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "meme-generator-ip"  # Optional: reserve a static IP
+    
+    # External DNS annotations
+    external-dns.alpha.kubernetes.io/hostname: "meme.YOUR_DOMAIN.COM"  # Replace with your subdomain
+    external-dns.alpha.kubernetes.io/ttl: "300"
+    
+    # SSL redirect
+    kubernetes.io/ingress.allow-http: "false"
+    
+    # Backend configuration for WebSocket
+    cloud.google.com/backend-config: '{"default": "meme-backend-config"}'
+spec:
+  rules:
+  - host: meme.YOUR_DOMAIN.COM  # Replace with your subdomain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: meme-generator-frontend
+            port:
+              number: 80
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: nats-websocket
+            port:
+              number: 8080
+---
+# Backend configuration for WebSocket support
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: meme-backend-config
+  namespace: meme-generator
+spec:
+  timeoutSec: 3600  # 1 hour for WebSocket connections
+  connectionDraining:
+    drainingTimeoutSec: 60
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 3600

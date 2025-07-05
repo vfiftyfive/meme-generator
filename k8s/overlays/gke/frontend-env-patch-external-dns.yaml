@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meme-generator-frontend
+spec:
+  template:
+    spec:
+      containers:
+      - name: meme-generator
+        env:
+        - name: VITE_NATS_URL
+          value: "wss://meme.YOUR_DOMAIN.COM/ws"  # Replace with your subdomain
