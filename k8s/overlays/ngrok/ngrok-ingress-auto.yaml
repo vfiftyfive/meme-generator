@@ -1,13 +1,12 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: meme-generator
+  name: meme-generator-auto
   namespace: meme-generator
 spec:
   ingressClassName: ngrok
   rules:
-  - host: nic.scaleops.ngrok.dev
-    http:
+  - http:
       paths:
       - path: /
         pathType: Prefix

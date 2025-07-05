@@ -183,12 +183,25 @@ kubectl create secret generic meme-generator-secrets \
 
 ### Custom Domain (ngrok)
 
-Edit `k8s/ngrok-operator/ngrok-ingress.yaml`:
-```yaml
-spec:
-  rules:
-  - host: your-domain.ngrok.dev  # Replace with your domain
-```
+1. **Configure your domain in ngrok dashboard**:
+   - Log in to https://dashboard.ngrok.com
+   - Go to Domains section
+   - Add and verify your custom domain
+
+2. **Update the ingress configuration**:
+   Edit `k8s/overlays/ngrok/ngrok-ingress.yaml`:
+   ```yaml
+   spec:
+     rules:
+     - host: your-domain.ngrok.dev  # Replace with your domain
+   ```
+
+3. **Note**: The DNS is configured through the ngrok CRD (Custom Resource Definition). The ngrok operator automatically:
+   - Creates tunnels for your domain
+   - Handles TLS certificates
+   - Routes traffic to your services
+
+If you see `ERR_NGROK_3200`, ensure your domain is properly configured in the ngrok dashboard.
 
 ## 🏗️ How It Works
 
