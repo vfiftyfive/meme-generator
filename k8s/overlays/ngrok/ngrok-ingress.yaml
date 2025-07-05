@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+spec:
+  ingressClassName: ngrok
+  rules:
+  - host: nic.scaleops.ngrok.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: meme-generator-frontend
+            port:
+              number: 80
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: nats-websocket
+            port:
+              number: 8080

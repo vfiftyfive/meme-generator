@@ -244,7 +244,7 @@ profiles:
         paths:
           - k8s/overlays/ngrok
       rawYaml:
-        - k8s/ngrok-operator/ngrok-ingress.yaml
+        - k8s/overlays/ngrok/ngrok-ingress.yaml
     deploy:
       kubectl:
         hooks:
