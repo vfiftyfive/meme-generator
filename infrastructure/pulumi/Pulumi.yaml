@@ -1,0 +1,19 @@
+name: meme-generator-infrastructure
+description: Infrastructure for Meme Generator application
+runtime: nodejs
+config:
+  gcp:project:
+    description: The GCP project to deploy resources to
+  domain:
+    description: The root domain (scaleops-labs.dev)
+    default: scaleops-labs.dev
+  subdomain:
+    description: The subdomain for the meme generator
+    default: meme-generator
+  gkeClusterName:
+    description: Name of the existing GKE cluster
+  gkeClusterLocation:
+    description: Location of the GKE cluster (region or zone)
+  createDnsZone:
+    description: Whether to create the DNS zone (set to false if zone already exists)
+    default: "false"

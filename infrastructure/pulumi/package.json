@@ -1,0 +1,21 @@
+{
+  "name": "meme-generator-infrastructure",
+  "version": "1.0.0",
+  "description": "Infrastructure as Code for Meme Generator using Pulumi",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "pulumi up",
+    "preview": "pulumi preview",
+    "destroy": "pulumi destroy"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@pulumi/gcp": "^7.0.0",
+    "@pulumi/kubernetes": "^4.0.0",
+    "@pulumi/pulumi": "^3.0.0"
+  }
+}

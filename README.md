@@ -162,30 +162,33 @@ skaffold delete --profile=<profile-name>
 
 ## 🔧 Configuration
 
-### DNS Configuration (GKE with Cloud DNS)
+### Infrastructure Management with Pulumi
 
-The application supports automatic DNS configuration using external-dns with Google Cloud DNS:
+The application uses Pulumi for infrastructure as code, managing DNS and GCP resources:
 
-1. **Prerequisites**:
-   - A domain you own
-   - GCP project with Cloud DNS API enabled
-   - GKE cluster with Workload Identity enabled
-
-2. **Setup Process**:
+1. **Quick Setup**:
    ```bash
-   # Run the setup script
-   cd k8s/external-dns
+   cd infrastructure/pulumi
    ./setup.sh
+   pulumi up
    ```
 
-3. **What it does**:
-   - Creates a Cloud DNS zone for your domain
-   - Sets up external-dns to automatically manage DNS records
-   - Configures Workload Identity for secure access
-   - Updates ingress resources with your domain
+2. **What Pulumi Manages**:
+   - Google Cloud DNS zone and records
+   - Static IP for ingress
+   - Service accounts and IAM permissions
+   - external-dns deployment and configuration
+   - Workload Identity bindings
 
-4. **Alternative: Config Connector**:
-   If you prefer using Config Connector, apply the resources in `k8s/config-connector/`
+3. **Deploy with Domain**:
+   ```bash
+   # After Pulumi setup
+   DOMAIN=scaleops-labs.dev skaffold run --profile=gke
+   
+   # Access at: https://meme-generator.scaleops-labs.dev
+   ```
+
+4. **Full Guide**: See `infrastructure/SETUP_GUIDE.md` for detailed instructions
 
 ### Environment Variables
 
