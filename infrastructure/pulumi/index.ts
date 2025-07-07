@@ -1,86 +1,86 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as gcp from "@pulumi/gcp";
 import * as k8s from "@pulumi/kubernetes";
+import * as fs from "fs";
+import * as path from "path";
+import * as os from "os";
 
 // Get configuration
 const config = new pulumi.Config();
-const projectId = config.require("gcp:project");
+const gcpConfig = new pulumi.Config("gcp");
+const projectId = gcpConfig.require("project");
+const dnsProjectId = config.require("dnsProjectId");
 const domain = config.require("domain");
 const subdomain = config.require("subdomain");
 const gkeClusterName = config.require("gkeClusterName");
 const gkeClusterLocation = config.require("gkeClusterLocation");
-const createDnsZone = config.getBoolean("createDnsZone") ?? false;
+const configDnsZoneName = config.get("dnsZoneName") || "scaleops-labs-dev";
 
-// Create or reference DNS zone
-let dnsZone: gcp.dns.ManagedZone;
+// Create provider for DNS project
+const dnsProvider = new gcp.Provider("dns-provider", {
+    project: dnsProjectId,
+});
+
+// Create or reference DNS zone in DNS project
+const createDnsZone = config.getBoolean("createDnsZone") ?? true;
+
+let dnsZone: pulumi.Output<gcp.dns.GetManagedZoneResult> | gcp.dns.ManagedZone;
+
 if (createDnsZone) {
-    dnsZone = new gcp.dns.ManagedZone("meme-generator-zone", {
-        name: "meme-generator-zone",
+    // Create the DNS zone
+    const createdZone = new gcp.dns.ManagedZone("dns-zone", {
+        name: configDnsZoneName,
         dnsName: `${domain}.`,
-        description: "DNS zone for meme generator application",
-    });
+        description: `DNS zone for ${domain}`,
+        project: dnsProjectId,
+    }, { provider: dnsProvider });
+    
+    dnsZone = createdZone;
 } else {
-    // Reference existing zone
-    dnsZone = gcp.dns.ManagedZone.get("meme-generator-zone", "meme-generator-zone");
+    // Reference existing DNS zone
+    dnsZone = pulumi.output(gcp.dns.getManagedZone({
+        name: configDnsZoneName,
+        project: dnsProjectId,
+    }, { provider: dnsProvider, async: true }));
 }
 
-// Create service account for external-dns
+// Create service account for external-dns (idempotent - will not error if exists)
 const externalDnsServiceAccount = new gcp.serviceaccount.Account("external-dns", {
     accountId: "external-dns",
     displayName: "External DNS for Kubernetes",
     project: projectId,
 });
 
-// Grant DNS admin permissions
-const dnsAdminBinding = new gcp.projects.IAMBinding("external-dns-admin", {
-    project: projectId,
+// Grant DNS admin permissions in the DNS project
+const dnsAdminBinding = new gcp.projects.IAMMember("external-dns-admin", {
+    project: dnsProjectId,
     role: "roles/dns.admin",
-    members: [pulumi.interpolate`serviceAccount:${externalDnsServiceAccount.email}`],
+    member: pulumi.interpolate`serviceAccount:${externalDnsServiceAccount.email}`,
 });
 
 // Get GKE cluster to configure k8s provider
-const cluster = gcp.container.getCluster({
+const cluster = pulumi.output(gcp.container.getCluster({
     name: gkeClusterName,
     location: gkeClusterLocation,
     project: projectId,
-});
+}));
 
-// Create k8s provider using cluster credentials
+// Create k8s provider using default kubeconfig
+const kubeconfigPaths = process.env.KUBECONFIG 
+    ? process.env.KUBECONFIG.split(':').filter(p => p && p.length > 0)
+    : [path.join(os.homedir(), '.kube', 'config')];
+
+// Use the first valid kubeconfig file
+let kubeconfig: string = '';
+for (const configPath of kubeconfigPaths) {
+    if (fs.existsSync(configPath)) {
+        kubeconfig = fs.readFileSync(configPath, 'utf8');
+        break;
+    }
+}
+
 const k8sProvider = new k8s.Provider("gke-k8s", {
-    kubeconfig: pulumi.all([cluster.name, cluster.endpoint, cluster.masterAuth]).apply(
-        ([name, endpoint, masterAuth]) => {
-            const context = `${projectId}_${gkeClusterLocation}_${name}`;
-            return `apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority-data: ${masterAuth.clusterCaCertificate}
-    server: https://${endpoint}
-  name: ${context}
-contexts:
-- context:
-    cluster: ${context}
-    user: ${context}
-  name: ${context}
-current-context: ${context}
-kind: Config
-preferences: {}
-users:
-- name: ${context}
-  user:
-    exec:
-      apiVersion: client.authentication.k8s.io/v1beta1
-      command: gcloud
-      args:
-      - container
-      - clusters
-      - get-credentials
-      - ${name}
-      - --location=${gkeClusterLocation}
-      - --project=${projectId}
-      interactiveMode: IfAvailable
-      provideClusterInfo: true`;
-        }
-    ),
+    kubeconfig: kubeconfig,
 });
 
 // Create namespace for external-dns
@@ -110,12 +110,10 @@ const k8sServiceAccount = new k8s.core.v1.ServiceAccount(
 );
 
 // Create Workload Identity binding
-const workloadIdentityBinding = new gcp.serviceaccount.IAMBinding("external-dns-workload-identity", {
+const workloadIdentityBinding = new gcp.serviceaccount.IAMMember("external-dns-workload-identity", {
     serviceAccountId: externalDnsServiceAccount.id,
     role: "roles/iam.workloadIdentityUser",
-    members: [
-        pulumi.interpolate`serviceAccount:${projectId}.svc.id.goog[${externalDnsNamespace.metadata.name}/${k8sServiceAccount.metadata.name}]`,
-    ],
+    member: pulumi.interpolate`serviceAccount:${projectId}.svc.id.goog[${externalDnsNamespace.metadata.name}/${k8sServiceAccount.metadata.name}]`,
 });
 
 // Create ClusterRole for external-dns
@@ -169,71 +167,37 @@ const clusterRoleBinding = new k8s.rbac.v1.ClusterRoleBinding(
     { provider: k8sProvider }
 );
 
-// Deploy external-dns
-const externalDnsDeployment = new k8s.apps.v1.Deployment(
+// Deploy external-dns using Helm chart
+const externalDnsChart = new k8s.helm.v3.Chart(
     "external-dns",
     {
-        metadata: {
-            name: "external-dns",
-            namespace: externalDnsNamespace.metadata.name,
+        chart: "external-dns",
+        version: "8.9.1",
+        namespace: externalDnsNamespace.metadata.name,
+        fetchOpts: {
+            repo: "https://charts.bitnami.com/bitnami",
         },
-        spec: {
-            strategy: {
-                type: "Recreate",
+        values: {
+            provider: "google",
+            google: {
+                project: dnsProjectId,
             },
-            selector: {
-                matchLabels: {
-                    app: "external-dns",
-                },
+            serviceAccount: {
+                create: false,  // We already created it
+                name: k8sServiceAccount.metadata.name,
             },
-            template: {
-                metadata: {
-                    labels: {
-                        app: "external-dns",
-                    },
+            domainFilters: [domain],
+            sources: ["ingress"],
+            policy: "sync",
+            txtOwnerId: "meme-generator",
+            logLevel: "info",
+            resources: {
+                limits: {
+                    memory: "256Mi",
                 },
-                spec: {
-                    serviceAccountName: k8sServiceAccount.metadata.name,
-                    containers: [
-                        {
-                            name: "external-dns",
-                            image: "registry.k8s.io/external-dns/external-dns:v0.14.0",
-                            args: [
-                                "--source=service",
-                                "--source=ingress",
-                                `--domain-filter=${domain}`,
-                                "--provider=google",
-                                `--google-project=${projectId}`,
-                                "--registry=txt",
-                                `--txt-owner-id=meme-generator`,
-                                "--log-level=info",
-                                "--policy=sync",
-                            ],
-                            env: [
-                                {
-                                    name: "GOOGLE_APPLICATION_CREDENTIALS",
-                                    value: "/var/run/secrets/cloud.google.com/service-account.json",
-                                },
-                            ],
-                            resources: {
-                                limits: {
-                                    memory: "256Mi",
-                                },
-                                requests: {
-                                    cpu: "100m",
-                                    memory: "128Mi",
-                                },
-                            },
-                            securityContext: {
-                                runAsNonRoot: true,
-                                runAsUser: 65534,
-                                readOnlyRootFilesystem: true,
-                                capabilities: {
-                                    drop: ["ALL"],
-                                },
-                            },
-                        },
-                    ],
+                requests: {
+                    cpu: "100m",
+                    memory: "128Mi",
                 },
             },
         },
@@ -241,34 +205,43 @@ const externalDnsDeployment = new k8s.apps.v1.Deployment(
     { provider: k8sProvider, dependsOn: [clusterRoleBinding, workloadIdentityBinding] }
 );
 
-// Create a static IP for the ingress (optional but recommended)
+// Note: Metrics server is pre-installed on GKE clusters
+// No need to deploy it separately
+
+// Create a static IP for the ingress
 const ingressIp = new gcp.compute.GlobalAddress("meme-generator-ip", {
     name: "meme-generator-ip",
     project: projectId,
 });
 
 // Output important values
-export const nameservers = dnsZone.nameServers;
+export const dnsZoneName = dnsZone instanceof gcp.dns.ManagedZone ? dnsZone.name : pulumi.output(dnsZone).apply(z => z.name);
+export const dnsZoneNameServers = dnsZone instanceof gcp.dns.ManagedZone ? dnsZone.nameServers : pulumi.output(dnsZone).apply(z => z.nameServers);
 export const externalDnsServiceAccountEmail = externalDnsServiceAccount.email;
 export const staticIpAddress = ingressIp.address;
 export const staticIpName = ingressIp.name;
 export const fullDomain = `${subdomain}.${domain}`;
 
 // Instructions for next steps
-export const nextSteps = pulumi.all([nameservers, staticIpAddress, fullDomain]).apply(
-    ([ns, ip, fqdn]) => `
+export const nextSteps = pulumi.all([dnsZone.nameServers, staticIpAddress, fullDomain, staticIpName]).apply(
+    ([ns, ip, fqdn, ipName]) => `
 Next Steps:
 1. Ensure your domain registrar is pointing to these nameservers:
    ${ns.join("\n   ")}
 
-2. Update your GKE ingress to use the static IP:
-   annotations:
-     kubernetes.io/ingress.global-static-ip-name: "${ingressIp.name}"
-
-3. Deploy your application:
+2. Deploy your application:
    DOMAIN=${domain} skaffold run --profile=gke
 
-4. Your application will be available at:
+3. Your application will be available at:
    https://${fqdn}
-`
-);
+
+4. The static IP (${ip}) will be automatically assigned to your ingress
+   if you use the annotation: kubernetes.io/ingress.global-static-ip-name: "${ipName}"
+
+5. Infrastructure includes:
+   - External DNS for automatic DNS management
+   - Static IP allocation for stable ingress
+   - Cross-project IAM for DNS management
+   
+Note: Metrics Server is pre-installed on GKE clusters
+`);

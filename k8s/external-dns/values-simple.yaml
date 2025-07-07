@@ -1,0 +1,15 @@
+provider: google
+google:
+  project: scaleops-dev-rel  # DNS project
+serviceAccount:
+  create: true
+  name: external-dns
+  annotations:
+    iam.gke.io/gcp-service-account: external-dns@scaleops-platform.iam.gserviceaccount.com
+domainFilters:
+  - scaleops-labs.dev
+sources:
+  - ingress
+policy: sync
+txtOwnerId: meme-generator
+logLevel: info

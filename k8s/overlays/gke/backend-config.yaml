@@ -1,0 +1,13 @@
+# Backend configuration for WebSocket support
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: meme-backend-config
+  namespace: meme-generator
+spec:
+  timeoutSec: 3600  # 1 hour for WebSocket connections
+  connectionDraining:
+    drainingTimeoutSec: 60
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 3600

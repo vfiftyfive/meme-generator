@@ -2,8 +2,9 @@ name: meme-generator-infrastructure
 description: Infrastructure for Meme Generator application
 runtime: nodejs
 config:
-  gcp:project:
-    description: The GCP project to deploy resources to
+  dnsProjectId:
+    description: The GCP project where DNS zone is hosted
+    default: scaleops-dev-rel
   domain:
     description: The root domain (scaleops-labs.dev)
     default: scaleops-labs.dev

@@ -101,7 +101,7 @@ profiles:
   # GKE deployment with Ingress and External DNS
   - name: gke
     activation:
-      - env: DOMAIN  # Activate when DOMAIN env var is set
+      - env: DOMAIN=.*  # Activate when DOMAIN env var is set to any value
     build:
       artifacts:
         - image: vfiftyfive/meme-generator-backend

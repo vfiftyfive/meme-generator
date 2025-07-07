@@ -12,8 +12,8 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: "meme-generator.scaleops-labs.dev"
     external-dns.alpha.kubernetes.io/ttl: "300"
     
-    # SSL redirect
-    kubernetes.io/ingress.allow-http: "false"
+    # Allow HTTP for now, will add SSL later
+    kubernetes.io/ingress.allow-http: "true"
     
     # Backend configuration for WebSocket
     cloud.google.com/backend-config: '{"default": "meme-backend-config"}'
@@ -36,17 +36,3 @@ spec:
             name: nats-websocket
             port:
               number: 8080
----
-# Backend configuration for WebSocket support
-apiVersion: cloud.google.com/v1
-kind: BackendConfig
-metadata:
-  name: meme-backend-config
-  namespace: meme-generator
-spec:
-  timeoutSec: 3600  # 1 hour for WebSocket connections
-  connectionDraining:
-    drainingTimeoutSec: 60
-  sessionAffinity:
-    affinityType: "CLIENT_IP"
-    affinityCookieTtlSec: 3600

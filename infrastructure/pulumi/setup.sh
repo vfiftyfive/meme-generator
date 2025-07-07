@@ -28,8 +28,11 @@ fi
 echo "📋 Current GCP Project: $CURRENT_PROJECT"
 
 # Prompt for configuration
-read -p "GCP Project ID [$CURRENT_PROJECT]: " PROJECT_ID
+read -p "GCP Project ID (GKE) [$CURRENT_PROJECT]: " PROJECT_ID
 PROJECT_ID=${PROJECT_ID:-$CURRENT_PROJECT}
+
+read -p "DNS Project ID [scaleops-dev-rel]: " DNS_PROJECT_ID
+DNS_PROJECT_ID=${DNS_PROJECT_ID:-scaleops-dev-rel}
 
 read -p "GKE Cluster Name: " GKE_CLUSTER_NAME
 if [ -z "$GKE_CLUSTER_NAME" ]; then
@@ -59,6 +62,7 @@ pulumi stack init production 2>/dev/null || pulumi stack select production
 # Set configuration
 echo "⚙️  Setting Pulumi configuration..."
 pulumi config set gcp:project $PROJECT_ID
+pulumi config set dnsProjectId $DNS_PROJECT_ID
 pulumi config set domain $DOMAIN
 pulumi config set subdomain $SUBDOMAIN
 pulumi config set gkeClusterName $GKE_CLUSTER_NAME
@@ -77,7 +81,8 @@ npm install
 # Show preview
 echo ""
 echo "✅ Setup complete! Configuration:"
-echo "   Project: $PROJECT_ID"
+echo "   GKE Project: $PROJECT_ID"
+echo "   DNS Project: $DNS_PROJECT_ID"
 echo "   Domain: $SUBDOMAIN.$DOMAIN"
 echo "   GKE Cluster: $GKE_CLUSTER_NAME in $GKE_CLUSTER_LOCATION"
 echo ""
