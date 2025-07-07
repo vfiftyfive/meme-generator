@@ -1,0 +1,51 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meme-generator
+  namespace: meme-generator
+  annotations:
+    # Use nginx ingress controller
+    nginx.ingress.kubernetes.io/class: "nginx"
+    kubernetes.io/ingress.class: "nginx"
+    
+    # SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # External DNS annotations
+    external-dns.alpha.kubernetes.io/hostname: "meme-generator.scaleops-labs.dev"
+    external-dns.alpha.kubernetes.io/ttl: "300"
+    
+    # WebSocket support
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: "nats-websocket"
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/proxy-set-headers: |
+      Connection "upgrade"
+      Upgrade $http_upgrade
+    
+    # Certificate manager
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+    - hosts:
+      - meme-generator.scaleops-labs.dev
+      secretName: meme-generator-tls
+  rules:
+  - host: meme-generator.scaleops-labs.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: meme-generator-frontend
+            port:
+              number: 80
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: nats-websocket-proxy
+            port:
+              number: 8080

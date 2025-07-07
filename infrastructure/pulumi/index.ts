@@ -208,11 +208,122 @@ const externalDnsChart = new k8s.helm.v3.Chart(
 // Note: Metrics server is pre-installed on GKE clusters
 // No need to deploy it separately
 
+// Deploy nginx-ingress-controller
+const nginxIngressNamespace = new k8s.core.v1.Namespace(
+    "nginx-ingress",
+    {
+        metadata: {
+            name: "nginx-ingress",
+        },
+    },
+    { provider: k8sProvider }
+);
+
 // Create a static IP for the ingress
 const ingressIp = new gcp.compute.GlobalAddress("meme-generator-ip", {
     name: "meme-generator-ip",
     project: projectId,
 });
+
+const nginxIngressChart = new k8s.helm.v3.Chart(
+    "nginx-ingress",
+    {
+        chart: "ingress-nginx",
+        version: "4.8.3",
+        namespace: nginxIngressNamespace.metadata.name,
+        fetchOpts: {
+            repo: "https://kubernetes.github.io/ingress-nginx",
+        },
+        values: {
+            controller: {
+                service: {
+                    type: "LoadBalancer",
+                    loadBalancerIP: ingressIp.address,
+                    annotations: {
+                        "cloud.google.com/load-balancer-type": "External",
+                    },
+                },
+                config: {
+                    "proxy-read-timeout": "3600",
+                    "proxy-send-timeout": "3600",
+                    "proxy-body-size": "10m",
+                    "use-http2": "false", // Disable HTTP/2 for better WebSocket support
+                },
+                resources: {
+                    requests: {
+                        cpu: "100m",
+                        memory: "256Mi",
+                    },
+                },
+            },
+            defaultBackend: {
+                enabled: true,
+            },
+        },
+    },
+    { provider: k8sProvider, dependsOn: [nginxIngressNamespace, ingressIp] }
+);
+
+// Deploy cert-manager for SSL certificates
+const certManagerNamespace = new k8s.core.v1.Namespace(
+    "cert-manager",
+    {
+        metadata: {
+            name: "cert-manager",
+        },
+    },
+    { provider: k8sProvider }
+);
+
+const certManagerChart = new k8s.helm.v3.Chart(
+    "cert-manager",
+    {
+        chart: "cert-manager",
+        version: "v1.13.3",
+        namespace: certManagerNamespace.metadata.name,
+        fetchOpts: {
+            repo: "https://charts.jetstack.io",
+        },
+        values: {
+            installCRDs: true,
+            global: {
+                leaderElection: {
+                    namespace: "cert-manager",
+                },
+            },
+        },
+    },
+    { provider: k8sProvider, dependsOn: [certManagerNamespace] }
+);
+
+// Create Let's Encrypt ClusterIssuer
+const letsencryptIssuer = new k8s.apiextensions.CustomResource(
+    "letsencrypt-prod",
+    {
+        apiVersion: "cert-manager.io/v1",
+        kind: "ClusterIssuer",
+        metadata: {
+            name: "letsencrypt-prod",
+        },
+        spec: {
+            acme: {
+                server: "https://acme-v02.api.letsencrypt.org/directory",
+                email: "admin@scaleops.com", // Update with your email
+                privateKeySecretRef: {
+                    name: "letsencrypt-prod",
+                },
+                solvers: [{
+                    http01: {
+                        ingress: {
+                            class: "nginx",
+                        },
+                    },
+                }],
+            },
+        },
+    },
+    { provider: k8sProvider, dependsOn: [certManagerChart] }
+);
 
 // Output important values
 export const dnsZoneName = dnsZone instanceof gcp.dns.ManagedZone ? dnsZone.name : pulumi.output(dnsZone).apply(z => z.name);

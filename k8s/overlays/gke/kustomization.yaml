@@ -11,8 +11,8 @@ resources:
   - nats-websocket-endpoint.yaml
 
 patches:
-  # Replace the base ingress with GKE-specific one
-  - path: ingress-external-dns.yaml
+  # Replace the base ingress with nginx ingress
+  - path: ingress-nginx.yaml
     target:
       kind: Ingress
       name: meme-generator
