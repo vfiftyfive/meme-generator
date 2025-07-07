@@ -6,17 +6,23 @@ metadata:
   annotations:
     # GKE ingress controller
     kubernetes.io/ingress.class: "gce"
-    kubernetes.io/ingress.global-static-ip-name: "meme-generator-ip"  # Optional: reserve a static IP
+    kubernetes.io/ingress.global-static-ip-name: "meme-generator-ip"
+    
+    # Managed SSL certificate
+    networking.gke.io/managed-certificates: "meme-generator-cert"
     
     # External DNS annotations
     external-dns.alpha.kubernetes.io/hostname: "meme-generator.scaleops-labs.dev"
     external-dns.alpha.kubernetes.io/ttl: "300"
     
-    # Allow HTTP for now, will add SSL later
+    # HTTPS configuration
     kubernetes.io/ingress.allow-http: "true"
     
     # Backend configuration for WebSocket
-    cloud.google.com/backend-config: '{"default": "meme-backend-config"}'
+    cloud.google.com/backend-config: '{"default": "meme-backend-config", "ports": {"8080": "websocket-backend-config"}}'
+    
+    # Frontend configuration for HTTPS redirect (disabled until cert is ready)
+    # networking.gke.io/v1beta1.FrontendConfig: "ssl-redirect"
 spec:
   rules:
   - host: meme-generator.scaleops-labs.dev
@@ -33,6 +39,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: nats-websocket
+            name: nats-websocket-proxy
             port:
               number: 8080

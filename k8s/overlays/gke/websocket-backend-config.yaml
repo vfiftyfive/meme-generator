@@ -1,0 +1,15 @@
+# Backend configuration specifically for WebSocket support
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: websocket-backend-config
+  namespace: meme-generator
+spec:
+  timeoutSec: 3600  # 1 hour for WebSocket connections
+  connectionDraining:
+    drainingTimeoutSec: 60
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+    affinityCookieTtlSec: 3600
+  # Disable health check as NATS WebSocket doesn't respond to HTTP health checks
+  # The backend will rely on connection draining and session affinity

@@ -1,0 +1,8 @@
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: meme-generator-cert
+  namespace: meme-generator
+spec:
+  domains:
+    - meme-generator.scaleops-labs.dev

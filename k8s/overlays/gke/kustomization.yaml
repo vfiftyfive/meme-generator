@@ -5,6 +5,10 @@ resources:
   - ../../base
   # GKE-specific resources
   - backend-config.yaml
+  - websocket-backend-config.yaml
+  - managed-certificate.yaml
+  - frontend-redirector.yaml
+  - nats-websocket-endpoint.yaml
 
 patches:
   # Replace the base ingress with GKE-specific one
