@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: meme-backend
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: meme-backend
+    app.kubernetes.io/part-of: meme-generator
+spec:
+  selector:
+    matchLabels:
+      app: meme-backend
+  namespaceSelector:
+    matchNames:
+      - meme-generator
+  endpoints:
+    - port: metrics
+      interval: 15s
+      scrapeTimeout: 10s

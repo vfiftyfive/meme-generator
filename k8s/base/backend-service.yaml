@@ -3,6 +3,10 @@ kind: Service
 metadata:
   name: meme-backend
   namespace: meme-generator
+  labels:
+    app: meme-backend
+    app.kubernetes.io/part-of: meme-generator
+    app.kubernetes.io/component: backend
 spec:
   selector:
     app: meme-backend

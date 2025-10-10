@@ -9,6 +9,8 @@ resources:
   - backend-secret.yaml
   - backend-service.yaml
   - backend-deployment.yaml
+  - backend-vpa.yaml
+  - backend-keda-scaledobject.yaml
   
   # Frontend
   - frontend-service.yaml

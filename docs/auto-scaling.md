@@ -80,7 +80,7 @@ resources:
 The backend uses KEDA for event-driven auto-scaling based on NATS message queue depth:
 
 ```yaml
-# k8s/backend/keda-scaledobject.yaml
+# k8s/base/backend-keda-scaledobject.yaml
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -110,7 +110,7 @@ spec:
 The backend deployment has low resource requests to ensure efficient scaling:
 
 ```yaml
-# k8s/backend/deployment.yaml (resource section)
+# k8s/base/backend-deployment.yaml (resource section)
 resources:
   requests:
     cpu: 50m
@@ -188,9 +188,10 @@ Ensure you have the following components installed in your Kubernetes cluster:
 
 4. **Deploy Backend with KEDA**:
    ```bash
-   kubectl apply -f k8s/backend/deployment.yaml
-   kubectl apply -f k8s/backend/service.yaml
-   kubectl apply -f k8s/backend/keda-scaledobject.yaml
+  kubectl apply -f k8s/base/backend-deployment.yaml
+  kubectl apply -f k8s/base/backend-service.yaml
+  kubectl apply -f k8s/base/backend-keda-scaledobject.yaml
+  kubectl apply -f k8s/base/backend-vpa.yaml
    ```
 
 5. **Deploy Frontend with HPA**:
