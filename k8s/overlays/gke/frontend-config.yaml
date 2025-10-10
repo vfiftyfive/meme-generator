@@ -1,0 +1,8 @@
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: meme-generator-frontend-config
+  namespace: meme-generator
+spec:
+  redirectToHttps:
+    enabled: true

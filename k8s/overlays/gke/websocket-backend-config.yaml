@@ -11,5 +11,7 @@ spec:
   sessionAffinity:
     affinityType: "CLIENT_IP"
     affinityCookieTtlSec: 3600
-  # Disable health check as NATS WebSocket doesn't respond to HTTP health checks
-  # The backend will rely on connection draining and session affinity
+  healthCheck:
+    type: HTTP
+    requestPath: /healthz
+    port: 31746

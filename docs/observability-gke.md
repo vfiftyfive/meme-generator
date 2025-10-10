@@ -89,3 +89,31 @@ Follow these steps after the `meme-demo` cluster is created and credentials are 
     --command -- sh -c "nats pub meme.request '{\"prompt\":\"demo meme\",\"fast_mode\":true,\"small_image\":true}' --server nats://nats.messaging.svc.cluster.local:4222"
   ```
   Inspect the subscriber logs for the base64 payload and delete the helper pods afterward (`kubectl delete pod nats-sub nats-cli`).
+
+## 6. Staging the Autoscaler Conflict
+- Remove the existing backend HPA, apply the KEDA ScaledObject, then recreate the manual HPA so both autoscalers exist for the chaos demo:
+  ```bash
+  kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
+  kubectl apply -f k8s/base/backend-keda-scaledobject.yaml
+  kubectl apply -f k8s/base/backend-hpa.yaml
+  ```
+- Populate the EndpointSlice for `/ws` with the current NATS service IP (required because the ingress and NATS run in different namespaces):
+  > Note: the NATS service ClusterIP (`kubectl get svc -n messaging nats -o jsonpath={.spec.clusterIP}`) is stable but not immutable—update `k8s/overlays/gke/nats-websocket-endpoint.yaml` if it ever changes.
+  ```bash
+  ./scripts/update-nats-endpoints.sh
+  ```
+- Confirm both HPAs are present and watching metrics before you start k6: `kubectl get hpa -n meme-generator`.
+- Capture a baseline snapshot in Grafana once the conflict is staged—these are the “before” panels for the talk.
+
+## 7. External DNS & Verification
+- Update the Cloud DNS A record so `meme-generator.scaleops-labs.dev` points to the load-balancer IP (check with `kubectl get ingress meme-generator -n meme-generator`):
+  ```bash
+  gcloud dns record-sets transaction start --zone=scaleops-labs-dev
+  gcloud dns record-sets transaction remove --zone=scaleops-labs-dev \
+    --name=meme-generator.scaleops-labs.dev. --type=A --ttl=300 <OLD_IP>
+  gcloud dns record-sets transaction add --zone=scaleops-labs-dev \
+    --name=meme-generator.scaleops-labs.dev. --type=A --ttl=300 <NEW_LB_IP>
+  gcloud dns record-sets transaction execute --zone=scaleops-labs-dev
+  ```
+- Wait for the managed certificate to become `Active` before flipping the `networking.gke.io/v1beta1.FrontendConfig` back on for HTTPS redirects (initial provisioning can take ~30 minutes).
+- Verify HTTP/HTTPS and WebSocket access: `curl -I http://meme-generator.scaleops-labs.dev`, `wscat -c wss://meme-generator.scaleops-labs.dev/ws`.

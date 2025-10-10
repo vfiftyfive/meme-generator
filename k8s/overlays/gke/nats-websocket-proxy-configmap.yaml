@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nats-websocket-proxy-config
+  namespace: meme-generator
+data:
+  nginx.conf: |
+    events {}
+    http {
+      upstream nats_ws {
+        server nats.messaging.svc.cluster.local:8080;
+      }
+
+      server {
+        listen 8080;
+
+        location /healthz {
+          return 200 'ok';
+        }
+
+        location / {
+          proxy_pass http://nats_ws;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "Upgrade";
+          proxy_set_header Host $host;
+        }
+      }
+    }

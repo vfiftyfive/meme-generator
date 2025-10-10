@@ -3,9 +3,19 @@ kind: Ingress
 metadata:
   name: meme-generator
   namespace: meme-generator
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: meme-generator-cert
+    networking.gke.io/v1beta1.FrontendConfig: meme-generator-frontend-config
 spec:
+  defaultBackend:
+    service:
+      name: meme-generator-frontend
+      port:
+        number: 80
   rules:
-    - http:
+    - host: meme-generator.scaleops-labs.dev
+      http:
         paths:
           - path: /
             pathType: Prefix

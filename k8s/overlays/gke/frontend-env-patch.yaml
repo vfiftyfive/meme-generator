@@ -10,5 +10,8 @@ spec:
         - name: frontend
           env:
             - name: VITE_NATS_URL
-              # Will be dynamically updated by Skaffold post-deploy hook
-              value: "WILL_BE_REPLACED"
+              value: "wss://meme-generator.scaleops-labs.dev/ws"
+            - name: VITE_REQUEST_SUBJECT
+              value: "meme.request"
+            - name: VITE_RESPONSE_SUBJECT
+              value: "meme.response"

@@ -8,7 +8,7 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: meme-backend
-  minReplicaCount: 0
+  minReplicaCount: 1
   maxReplicaCount: 10
   pollingInterval: 5
   cooldownPeriod: 30
@@ -22,6 +22,6 @@ spec:
         stream: "MEMES"
         consumer: "meme-generator"
         lagThreshold: "5"
+        account: "$G"
         activationLagThreshold: "1"
-        deliveryRateThreshold: "10"
         useHttps: "false"

@@ -7,21 +7,28 @@ resources:
   - backend-config.yaml
   - websocket-backend-config.yaml
   - managed-certificate.yaml
-  - frontend-redirector.yaml
-  - nats-websocket-endpoint.yaml
+  - frontend-config.yaml
+  - nats-websocket-proxy-configmap.yaml
+  - nats-websocket-proxy-deployment.yaml
 
 patches:
-  # Replace the base ingress with nginx ingress
-  - path: ingress-nginx.yaml
-    target:
-      kind: Ingress
-      name: meme-generator
-  
   # Frontend environment configuration
   - path: frontend-env-patch.yaml
     target:
       kind: Deployment
       name: meme-generator-frontend
+  - path: ingress-gce.yaml
+    target:
+      kind: Ingress
+      name: meme-generator
+  - path: frontend-service-patch.yaml
+    target:
+      kind: Service
+      name: meme-generator-frontend
+  - path: nats-websocket-service-patch.yaml
+    target:
+      kind: Service
+      name: nats-websocket-proxy
 
 # Use Docker Hub images or your registry
 images:
