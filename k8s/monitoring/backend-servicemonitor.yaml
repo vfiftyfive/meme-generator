@@ -6,6 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: meme-backend
     app.kubernetes.io/part-of: meme-generator
+    release: prometheus
 spec:
   selector:
     matchLabels:

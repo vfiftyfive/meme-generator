@@ -48,13 +48,13 @@ This guide walks you through setting up the Kubernetes infrastructure for the Me
 
 ### Redis
 
-The demo uses the ot-container-kit Redis Operator to deploy and manage Redis. Key features:
+For local and operator-driven setups we use the ot-container-kit Redis Operator (see the [Redis Operator documentation](./redis-operator.md)).
 
-- Redis is deployed in the `cache` namespace
-- Configuration is managed via a ConfigMap that's referenced by the Redis CR
-- Redis metrics are exported for Prometheus monitoring
+For the lightweight GKE demo cluster, a simple `Deployment`/`Service` pair (`k8s/cache/simple-redis.yaml`) avoids pulling Bitnami images that now require authenticated access. Apply it after creating the `cache` namespace:
 
-For detailed information about the Redis setup, see the [Redis Operator documentation](./redis-operator.md).
+```bash
+kubectl apply -f k8s/cache/simple-redis.yaml
+```
 
 ### NATS JetStream
 
@@ -100,3 +100,4 @@ After completing the infrastructure setup, proceed to:
 
 1. Phase 2: Implement the Rust backend service that will be scaled by KEDA based on NATS queue depth
 2. Phase 3: Implement the React frontend that will be scaled by HPA
+3. Provision Hugging Face credentials: create the `meme-generator-secrets` secret with a valid `HF_API_TOKEN` and, if necessary, set `HF_API_URL` to the FLUX router endpoint so inference requests succeed in the demo environment.

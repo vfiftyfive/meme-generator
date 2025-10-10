@@ -14,10 +14,12 @@
 | M5 | Demo runbook finalized | Planned |
 
 ## Pre-Demo Infrastructure Checklist
-- [ ] Provision `meme-demo` GKE cluster (scaleops-dev-rel) with 2 → 4 node autoscaling.
-- [ ] Enable required addons (HorizontalPodAutoscaling, HttpLoadBalancing, Cloud Logging) and IP aliasing.
-- [ ] Pull cluster credentials locally (`gcloud container clusters get-credentials meme-demo --region us-central1`).
-- [ ] Verify baseline (`kubectl get nodes`, `kubectl get namespace meme-generator` after deploy).
+- [x] Provision `meme-demo` GKE cluster (scaleops-dev-rel) with 2 → 4 node autoscaling.
+- [x] Enable required addons (HorizontalPodAutoscaling, HttpLoadBalancing, Cloud Logging) and IP aliasing.
+- [x] Pull cluster credentials locally (`gcloud container clusters get-credentials meme-demo --region us-central1`).
+- [x] Verify baseline (`kubectl get nodes`, `kubectl get namespace meme-generator` after deploy).
+
+> Current cluster runs zonally in `us-central1-a` so the starting node count remains two.
 
 ## Execution Phases
 
@@ -40,6 +42,11 @@
 - Added service labels and `k8s/monitoring/backend-servicemonitor.yaml` to formalize scraping; need to validate once deployed.
 - Created backend VPA/KEDA manifests (`k8s/base/backend-vpa.yaml`, `k8s/base/backend-keda-scaledobject.yaml`) so Skaffold renders the full autoscaler trio.
 - Authored `docs/observability-gke.md` with Helm install sequence for kube-prometheus-stack, KEDA, and VPA on GKE.
+- Deployed kube-prometheus-stack, KEDA, and VPA controllers on `meme-demo`; generated TLS material for `vpa-tls-certs` so the admission controller now runs.
+- Applied base workloads (NATS, Redis, backend, frontend) and confirmed Prometheus is scraping the backend (`up{job="meme-backend"} == 1`).
+- Reconfigured the backend default Hugging Face endpoint to the router/FLUX model (`HF_API_URL`), and validated end-to-end generation via direct NATS publish/subscription (base64 payload confirmed on `meme.response`).
+- Added lightweight Redis deployment (`k8s/cache/simple-redis.yaml`) for the demo cluster to avoid private Bitnami image pulls.
+- KEDA `ScaledObject` currently conflicts with the existing backend HPA—plan to handle this during the chaos/harmony phases.
 
 ### Phase 3 – Chaos Scenario → M3 *(Planned)*
 - [ ] Parameterize k6 scripts for CPU/memory spikes and queue backlogs; document commands.
