@@ -51,6 +51,7 @@
 - Created KEDA ScaledObject `meme-backend` (reintroducing the manual HPA afterward) so both HPAs now coexist for the conflict demo.
 - Ran k6 smoke test against the port-forwarded frontend (results in `k6/results/smoke.json`) to validate the baseline stack before chaos tuning.
 - Reconfigured the backend default Hugging Face endpoint to the router/FLUX model (`HF_API_URL`), and validated end-to-end generation via direct NATS publish/subscription (base64 payload confirmed on `meme.response`).
+- Rotated the `HF_API_TOKEN` secret to the live key and restarted the backend; Hugging Face requests now return 200s (402s resolved).
 - Added lightweight Redis deployment (`k8s/cache/simple-redis.yaml`) for the demo cluster to avoid private Bitnami image pulls.
 
 ### Phase 3 – Chaos Scenario → M3 *(Planned)*

@@ -91,20 +91,20 @@ Follow these steps after the `meme-demo` cluster is created and credentials are 
   Inspect the subscriber logs for the base64 payload and delete the helper pods afterward (`kubectl delete pod nats-sub nats-cli`).
 
 ## 6. Staging the Autoscaler Conflict
-- Remove the existing backend HPA, apply the KEDA ScaledObject, then recreate the manual HPA so both autoscalers exist for the chaos demo:
+## 6. Staging the Autoscaler Conflict
+- Use the helper script to toggle autoscaler modes:
   ```bash
-  kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
-  kubectl apply -f k8s/base/backend-keda-scaledobject.yaml
-  kubectl apply -f k8s/base/backend-hpa.yaml
-  ```
-- Populate the EndpointSlice for `/ws` with the current NATS service IP (required because the ingress and NATS run in different namespaces):
-  > Note: the NATS service ClusterIP (`kubectl get svc -n messaging nats -o jsonpath={.spec.clusterIP}`) is stable but not immutable—update `k8s/overlays/gke/nats-websocket-endpoint.yaml` if it ever changes.
-  ```bash
-  ./scripts/update-nats-endpoints.sh
-  ```
-- Confirm both HPAs are present and watching metrics before you start k6: `kubectl get hpa -n meme-generator`.
-- Capture a baseline snapshot in Grafana once the conflict is staged—these are the “before” panels for the talk.
+  # Run both HPA and KEDA (conflict demo)
+  ./scripts/autoscaler-toggle.sh conflict
 
+  # KEDA only
+  ./scripts/autoscaler-toggle.sh keda-only
+
+  # Manual HPA only (baseline / teardown)
+  ./scripts/autoscaler-toggle.sh hpa-only
+  ```
+- Check autoscaler objects at any time: `./scripts/autoscaler-toggle.sh status`.
+- Capture Grafana snapshots immediately after staging the conflict—these become the “before” panels for the talk.
 ## 7. External DNS & Verification
 - Update the Cloud DNS A record so `meme-generator.scaleops-labs.dev` points to the load-balancer IP (check with `kubectl get ingress meme-generator -n meme-generator`):
   ```bash
