@@ -185,7 +185,8 @@ spec:
               apk add --no-cache curl unzip >/tmp/alpine.log 2>&1
               curl -sSL https://github.com/nats-io/natscli/releases/download/v0.3.0/nats-0.3.0-linux-amd64.zip -o /tmp/nats.zip
               unzip -q /tmp/nats.zip -d /tmp/nats
-              /tmp/nats/nats-0.3.0-linux-amd64/nats bench pub "\$NATS_SUBJECT" \
+              /tmp/nats/nats-0.3.0-linux-amd64/nats bench js pub sync "\$NATS_SUBJECT" \
+                --stream "\$NATS_STREAM" \
                 --clients "\$NATS_CLIENTS" \
                 --msgs "\$NATS_MESSAGES" \
                 --payload /tmp/payload.json \

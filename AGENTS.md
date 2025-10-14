@@ -7,18 +7,19 @@ issue so the next agent can resume without interviewing humans.
 ---
 
 ## 1. Current Situation (Rolling Update)
-- Conflict run succeeded on 2025-10-14 19:40–19:42 BST: queue load job pushed the KEDA
-  metric to `6k/5`, manual HPA drove the backend to 10 replicas, and KEDA’s HPA tracked
-  10/10 shortly afterward (`hpa-watch.log` captures the sequence).
-- Frontend HPA reacted during the k6 demo load at 20:07 BST, scaling to two pods with
-  CPU 44 %/30 % while backend settled back to a single replica.
-- `scripts/nats-queue-load.sh` now uses `alpine` + GitHub NATS CLI download, so the job
-  runs inside the cluster without GHCR pulls; latest pod `nats-queue-load-52qf9` is
-  `Completed` and can be deleted once artifacts are gathered.
-- Grafana screenshots of the conflict window still needed; set dashboard time range to
-  19:39–19:43 BST for the fight and 20:06–20:10 BST for the frontend spike.
-- `hpa-watch.log` currently includes both the conflict spike and the frontend ramp; the
-  watcher is in the background (PID in `hpa-watch.pid`).
+- Conflict run (manual HPA + KEDA) succeeded on 2025-10-14 19:40–19:42 BST: queue load
+  pushed the metric to `6k/5`, manual HPA escalated to 10 replicas, and KEDA’s HPA chased
+  to 10/10 (`hpa-watch.log` records the fight).
+- Harmony run (KEDA-only) succeeded on 2025-10-14 20:59–21:02 BST: JetStream queue load
+  via `nats-queue-load.sh --messages 20000 --clients 80` nudged `keda-hpa-meme-backend`
+  to 2 replicas (`3500m/5`) before draining calmly; frontend HPA stayed at 1 pod until
+  the subsequent k6 demo at 21:24 BST, where it scaled to two pods (cpu 43 %/30 %).
+- `scripts/nats-queue-load.sh` now pulls the NATS CLI and uses `nats bench js pub sync`
+  so messages land in JetStream; latest job `nats-queue-load-qlx5p` is `Completed`.
+- Grafana screenshots still outstanding: capture conflict (≈19:39–19:43 BST) and harmony
+  (≈21:24–21:28 BST) windows once you have UI access.
+- `hpa-watch.log` contains both conflict and harmony traces; watcher stopped after
+  21:27 BST (PID cleaned up).
 
 _When you finish a task, refresh this section with bullet points summarising new
 facts, blockers, or hand-offs._
@@ -45,14 +46,14 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. Capture visuals: open Grafana autoscaling dashboard, set range to the conflict window
-   (≈19:39–19:43 BST) and the frontend spike (≈20:06–20:10 BST), and export screenshots
-   for the demo deck.
-2. Archive metrics: clip the relevant `hpa-watch.log` segments, collect `kubectl get hpa`
-   snapshots, and stash k6 summary/output under `k6/results/` if long-term storage is
-   required.
-3. Prep harmony rehearsal: decide on conflict resolution toggle (e.g., `./scripts/autoscaler-toggle.sh keda-only`),
-   rerun queue + k6 load, and document the “after” state in `docs/demo-roadmap.md`.
+1. Capture visuals: export Grafana autoscaling dashboard screenshots for conflict
+   (≈19:39–19:43 BST) and harmony (≈21:24–21:28 BST) windows.
+2. Archive console evidence: trim `hpa-watch.log` to handy snippets, persist relevant
+   `kubectl get hpa` snapshots, and store the latest k6 output under `k6/results/`.
+3. Plan the harmony narrative: document in `docs/demo-roadmap.md` the contrast between
+   conflict (manual HPA vs KEDA tug-of-war) and harmony (KEDA-only scaling to 2 pods),
+   then script the resolution toggle (`./scripts/autoscaler-toggle.sh hpa-only`) for
+   demo day reset.
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).

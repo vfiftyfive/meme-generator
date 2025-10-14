@@ -8,7 +8,7 @@ These tools help you generate load on the NATS JetStream queue to trigger KEDA a
 
 ### 1. Kubernetes Job Launcher: `scripts/nats-queue-load.sh`
 
-Launches an ephemeral Alpine pod inside the cluster, downloads the NATS CLI, and runs `nats bench pub` to fire thousands of JSON requests at `meme.request`. This is the fastest way to build queue pressure without relying on local port-forwards.
+Launches an ephemeral Alpine pod inside the cluster, downloads the NATS CLI, and runs `nats bench js pub sync` so messages land in JetStream (`MEMES`) and build real consumer lag. This is the fastest way to build queue pressure without relying on local port-forwards.
 
 #### Usage:
 
