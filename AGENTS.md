@@ -7,13 +7,18 @@ issue so the next agent can resume without interviewing humans.
 ---
 
 ## 1. Current Situation (Rolling Update)
-- Autoscaler conflict demo prep in progress. Latest run added `scripts/nats-queue-load.sh`
-  and the 6‑minute k6 scenario `k6/scenarios/2-load-demo.js` to drive HPA/KEDA drama.
-- Recent status: conflict toggle enabled, but HPA stayed at cpu 1 %/50 % because queue
-  pressure was insufficient. Next run should pair the queue job with the k6 demo load
-  while tailing Grafana dashboards (see §3).
-- Live telemetry snapshot: `hpa-watch.log` captures periodic `kubectl get hpa`
-  during the last attempt; restart it if we run new load.
+- Conflict run succeeded on 2025-10-14 19:40–19:42 BST: queue load job pushed the KEDA
+  metric to `6k/5`, manual HPA drove the backend to 10 replicas, and KEDA’s HPA tracked
+  10/10 shortly afterward (`hpa-watch.log` captures the sequence).
+- Frontend HPA reacted during the k6 demo load at 20:07 BST, scaling to two pods with
+  CPU 44 %/30 % while backend settled back to a single replica.
+- `scripts/nats-queue-load.sh` now uses `alpine` + GitHub NATS CLI download, so the job
+  runs inside the cluster without GHCR pulls; latest pod `nats-queue-load-52qf9` is
+  `Completed` and can be deleted once artifacts are gathered.
+- Grafana screenshots of the conflict window still needed; set dashboard time range to
+  19:39–19:43 BST for the fight and 20:06–20:10 BST for the frontend spike.
+- `hpa-watch.log` currently includes both the conflict spike and the frontend ramp; the
+  watcher is in the background (PID in `hpa-watch.pid`).
 
 _When you finish a task, refresh this section with bullet points summarising new
 facts, blockers, or hand-offs._
@@ -40,16 +45,14 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. Run simultaneous load to trigger scaling:
-   - `./scripts/autoscaler-toggle.sh conflict`
-   - `./scripts/nats-queue-load.sh --messages 6000 --clients 60`
-   - `k6 run k6/scenarios/2-load-demo.js`
-2. Observe & capture:
-   - `kubectl get hpa -n meme-generator --watch` (or append to `hpa-watch.log`)
-   - Grafana dashboard `k8s/monitoring/complete-dashboard.json` (capture before/after)
-3. When scaling happens:
-   - Save screenshots/metrics, update `docs/demo-roadmap.md` Phase 3 checkboxes,
-     and summarise in §1 above.
+1. Capture visuals: open Grafana autoscaling dashboard, set range to the conflict window
+   (≈19:39–19:43 BST) and the frontend spike (≈20:06–20:10 BST), and export screenshots
+   for the demo deck.
+2. Archive metrics: clip the relevant `hpa-watch.log` segments, collect `kubectl get hpa`
+   snapshots, and stash k6 summary/output under `k6/results/` if long-term storage is
+   required.
+3. Prep harmony rehearsal: decide on conflict resolution toggle (e.g., `./scripts/autoscaler-toggle.sh keda-only`),
+   rerun queue + k6 load, and document the “after” state in `docs/demo-roadmap.md`.
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).

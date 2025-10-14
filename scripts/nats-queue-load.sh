@@ -13,7 +13,6 @@ port-forwarding.
 Options:
   --messages NUM      Total messages to publish (default: 4000)
   --clients NUM       Concurrent publisher workers (default: 40)
-  --batch NUM         Batch size before waiting for acks (default: 200)
   --prompt TEXT       Prompt to include in each request (default: "Conflict demo load")
   --fast-mode         Set fast_mode=true in the payload (default: false)
   --small-image       Set small_image=true in the payload (default: false)
@@ -46,7 +45,6 @@ SUBJECT="meme.request"
 STREAM="MEMES"
 MESSAGES=4000
 CLIENTS=40
-BATCH=200
 FAST_MODE="false"
 SMALL_IMAGE="false"
 PROMPT="Conflict demo load"
@@ -61,10 +59,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --clients)
       CLIENTS="$2"
-      shift 2
-      ;;
-    --batch)
-      BATCH="$2"
       shift 2
       ;;
     --server)
@@ -166,7 +160,7 @@ spec:
       restartPolicy: Never
       containers:
         - name: nats-bench
-          image: ghcr.io/nats-io/nats-box:latest
+          image: alpine:3.19
           env:
             - name: NATS_SERVER
               value: "$SERVER"
@@ -178,8 +172,6 @@ spec:
               value: "$MESSAGES"
             - name: NATS_CLIENTS
               value: "$CLIENTS"
-            - name: NATS_BATCH
-              value: "$BATCH"
             - name: PAYLOAD_B64
               value: "$PAYLOAD_B64"
           command:
@@ -187,16 +179,17 @@ spec:
             - -c
             - |
               set -euo pipefail
-              echo "$PAYLOAD_B64" | base64 -d > /tmp/payload.json
+              echo "\$PAYLOAD_B64" | base64 -d > /tmp/payload.json
               echo "▶ Payload:"
               cat /tmp/payload.json
-              nats bench js pub "$NATS_SUBJECT" \
-                --stream "$NATS_STREAM" \
-                --clients "$NATS_CLIENTS" \
-                --msgs "$NATS_MESSAGES" \
-                --batch "$NATS_BATCH" \
+              apk add --no-cache curl unzip >/tmp/alpine.log 2>&1
+              curl -sSL https://github.com/nats-io/natscli/releases/download/v0.3.0/nats-0.3.0-linux-amd64.zip -o /tmp/nats.zip
+              unzip -q /tmp/nats.zip -d /tmp/nats
+              /tmp/nats/nats-0.3.0-linux-amd64/nats bench pub "\$NATS_SUBJECT" \
+                --clients "\$NATS_CLIENTS" \
+                --msgs "\$NATS_MESSAGES" \
                 --payload /tmp/payload.json \
-                --server "$NATS_SERVER"
+                --server "\$NATS_SERVER"
 EOF
 
 echo "⏳ Waiting for job completion..."
