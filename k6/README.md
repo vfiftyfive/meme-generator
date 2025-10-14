@@ -39,6 +39,7 @@ Internet → Cloud LB → Ingress → Frontend (HPA: 1-5) → WebSocket → Back
 |------|----------|-----|---------|------------------|
 | **Smoke** | 5 min | 3 | Baseline validation | System works, <1s response |
 | **Load** | 30 min | 50 | Normal traffic | Frontend: 2-3 pods, Backend: 3-5 pods |
+| **Demo Load** | 6 min | 40 | Autoscaler conflict rehearsal | Quick Grafana snapshots, baseline conflict |
 | **Stress** | 20 min | 200 | Find limits | Max scaling, identify bottlenecks |
 | **Spike** | 15 min | 10→150→10 | Rapid scaling | HPA reacts <60s, no errors |
 | **Soak** | 2 hours | 30 | Stability | No memory leaks, stable performance |
@@ -56,6 +57,9 @@ k6 run scenarios/1-smoke.js
 # Run load test with monitoring
 ./monitor-scaling.sh --watch &  # In another terminal
 k6 run scenarios/2-load.js
+
+# Run quick demo load (autoscaler conflict warmup)
+k6 run scenarios/2-load-demo.js
 ```
 
 ### Use the test runner:

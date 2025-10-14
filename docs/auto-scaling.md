@@ -249,9 +249,13 @@ Ensure you have the following components installed in your Kubernetes cluster:
 ### Testing Backend KEDA
 
 1. **Generate Message Queue Load**:
-   The easiest way is to generate multiple memes through the frontend UI.
-   
-   Alternatively, you can publish messages directly to NATS:
+   The preferred approach is to launch the Kubernetes-native load job:
+   ```bash
+   ./scripts/nats-queue-load.sh --messages 6000 --clients 60
+   ```
+   This spins up a `nats-box` Job inside the cluster and publishes valid JSON payloads to `meme.request`, which quickly drives queue depth and KEDA activity.
+
+   If you need a lighter touch or are developing locally, you can still publish messages directly to NATS:
    ```bash
    # Port-forward NATS service
    kubectl port-forward svc/nats -n messaging 4222:4222

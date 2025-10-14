@@ -36,3 +36,8 @@ dist/
 target/
 build/
 out/
+
+# Local testing artefacts
+hpa-watch.log
+hpa-watch.pid
+k6/results/

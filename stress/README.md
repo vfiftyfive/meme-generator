@@ -6,25 +6,34 @@ This directory contains tools for stress testing the meme generator application,
 
 These tools help you generate load on the NATS JetStream queue to trigger KEDA auto-scaling for the backend service. The load will also indirectly affect the frontend (HPA) and Redis (VPA) scaling as the system processes the requests.
 
-### 1. Bash Script: `nats_load.sh`
+### 1. Kubernetes Job Launcher: `scripts/nats-queue-load.sh`
 
-A simple bash script that generates load on the NATS queue.
+Launches a `nats-box` Job inside the cluster that uses `nats bench js pub` to publish thousands of JSON requests to `meme.request`. This is the fastest way to build queue pressure without relying on local port-forwards.
 
 #### Usage:
 
 ```bash
-# Make the script executable
-chmod +x nats_load.sh
+# Ensure the script is executable
+chmod +x scripts/nats-queue-load.sh
 
-# Run the script
-./nats_load.sh
+# Publish 4k messages with 40 concurrent publishers (defaults)
+./scripts/nats-queue-load.sh
+
+# Publish 8k slow-path requests to really stress the queue
+./scripts/nats-queue-load.sh \
+  --messages 8000 \
+  --clients 80 \
+  --batch 400 \
+  --prompt "Conflict demo slow path" \
+  --small-image
 ```
 
 #### Features:
-- Automatically sets up port-forwarding to NATS
-- Sends batches of 10 messages to the NATS queue
-- Monitors pod count to detect scaling
-- Displays NATS queue status
+- Runs entirely inside the cluster—no local port forwarding required.
+- Payload is valid JSON matching the backend contract (`prompt`, `fast_mode`, `small_image`).
+- Parameters for publisher count, batch size, prompt text, and payload flags.
+- Streams the Job logs by default so you can watch throughput.
+- Automatically cleans up the Job unless `--keep-job` is supplied.
 
 ### 2. Python Script: `nats_load.py`
 
@@ -47,7 +56,7 @@ chmod +x nats_load.py
 ./nats_load.py
 
 # Run with custom settings
-./nats_load.py --batch-size 20 --interval 0.1 --batch-pause 10
+./nats_load.py --batch-size 200 --interval 0.05 --parallel 8 --bursts 5
 
 # Use custom prompts from a file
 ./nats_load.py --prompts prompts.txt
@@ -55,22 +64,18 @@ chmod +x nats_load.py
 
 #### Command-line Options:
 
-- `--batch-size`: Number of messages to send in each batch (default: 10)
-- `--interval`: Interval between messages in seconds (default: 0.2)
-- `--batch-pause`: Pause between batches in seconds (default: 5)
+- `--batch-size`: Number of messages for each sender in a burst (default: 50)
+- `--interval`: Delay between individual publishes in seconds (default: 0.05)
+- `--batch-pause`: Pause between bursts in seconds (default: 5)
 - `--bursts`: Number of batch bursts to send (default: 3)
-- `--parallel`: Number of parallel connections to use (default: 1)
-- `--prompts`: File with custom prompts, one per line
-- `--fast-mode`: Enable fast mode for image generation (default: false)
-- `--small-image`: Generate smaller images to reduce processing time (default: false)
+- `--parallel`: Number of worker threads to run concurrently (default: 10)
+- `--prompts`: File with custom prompts, one per line (optional)
 
 #### Features:
-- More detailed monitoring of NATS queue status
-- Configurable batch size, timing, and parallel connections
-- Support for custom prompts
-- Options to toggle fast mode and small image generation
-- Real-time metrics display showing queue depth and processing rate
-- Colorful and informative output
+- Automatically port-forwards the NATS service to `localhost:4222`.
+- Uses the NATS CLI to publish properly formatted JSON payloads.
+- Threaded message bursts to build queue depth quickly.
+- Reports pending/ack pending counts and backend pod totals between bursts.
 
 ## Sample Prompts File
 
@@ -122,7 +127,7 @@ While running the load tests, you should monitor:
 
 5. **Redis Memory Usage**:
    ```bash
-   kubectl top pod -n redis
+   kubectl top pod -n cache
    ```
 
 ## Expected Behavior

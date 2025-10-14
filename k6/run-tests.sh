@@ -77,8 +77,9 @@ echo "3) Stress Test (20 min) - Find breaking points"
 echo "4) Spike Test (15 min) - Sudden traffic bursts"
 echo "5) Soak Test (2 hours) - Long-term stability"
 echo "6) Full Suite (3+ hours) - Run all tests"
+echo "7) Demo Load (6 min) - Autoscaler conflict warmup"
 echo ""
-read -p "Enter choice [1-6]: " choice
+read -p "Enter choice [1-7]: " choice
 
 case $choice in
     1)
@@ -109,6 +110,9 @@ case $choice in
             run_test "stress" "scenarios/3-stress.js" true
             run_test "spike" "scenarios/4-spike.js" true
         fi
+        ;;
+    7)
+        run_test "load-demo" "scenarios/2-load-demo.js" true
         ;;
     *)
         echo -e "${RED}Invalid choice${NC}"
