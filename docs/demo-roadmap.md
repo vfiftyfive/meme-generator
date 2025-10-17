@@ -73,6 +73,12 @@
 - [ ] Tune VPA stabilization windows and KEDA cooldown/thresholds.
 - [ ] Redeploy (`skaffold run --profile=gke --tail`); rerun k6 scenario; capture "after" dashboards.
 
+**Progress & Follow-ups**
+- Ran KEDA-only harmony rehearsal (2025-10-18 00:12 BST): queue load drove `keda-hpa-meme-backend`
+  to 10 replicas without manual HPA intervention; backend downscales after cooldown while frontend
+  stabilises at two pods during the k6 demo load.
+- Still need Grafana "after" panels and narrative comparing conflict vs harmony scaling curves.
+
 ### Phase 5 – Runbook & Rehearsal → M5 *(Planned)*
 - [ ] Draft demo script: timing, terminal layout, Grafana panels, meme transitions.
 - [ ] Package reset automation to clear autoscalers and redeploy baseline state.
