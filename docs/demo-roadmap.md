@@ -65,7 +65,7 @@
 - Added `k6/scenarios/2-load-demo.js` plus runner menu option for the 6-minute conflict rehearsal.
 - Authored `scripts/nats-queue-load.sh` to launch in-cluster `nats bench` jobs; documented usage in `docs/auto-scaling.md` and `stress/README.md`.
 - Conducted 2025-10-14 conflict run: `nats-queue-load` hit 10 backend replicas, manual HPA pegged CPU 93 %/50 %, frontend stayed at 1 pod until k6 ramp.
-- Conducted 2025-10-14 harmony run: with manual HPA removed, JetStream load scaled backend to 2 replicas briefly before settling, demonstrating stable KEDA control.
+- Conducted 2025-10-18 harmony run (KEDA-only): JetStream load scaled backend 1→4→8→10 replicas per `kubectl describe hpa`; frontend only scaled during the k6 rehearsal.
 - Next action: capture Grafana before/after panels and annotate failure symptoms for the narrative.
 
 ### Phase 4 – Harmony Implementation → M4 *(Planned)*
