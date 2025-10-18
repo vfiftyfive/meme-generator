@@ -20,8 +20,8 @@ issue so the next agent can resume without interviewing humans.
 - `scripts/nats-queue-load.sh` now uses an Alpine pod that downloads the NATS CLI, so
   load jobs run inside the cluster without GHCR pulls; latest jobs (`nats-queue-load-5n6wr`,
   `nats-queue-load-pqm6z`) completed successfully.
-- Grafana screenshots still outstanding: capture conflict (≈19:39–19:43 BST) and harmony
-  (≈00:05–00:13 BST) windows for the autoscaling dashboard.
+- Grafana screenshots captured via render API: see `results/grafana/conflict-dashboard.png`
+  and `results/grafana/harmony-dashboard.png` for before/after visuals.
 
 _When you finish a task, refresh this section with bullet points summarising new
 facts, blockers, or hand-offs._
@@ -48,8 +48,7 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. Capture Grafana autoscaling dashboard screenshots for conflict (≈19:39–19:43 BST) and
-   harmony (≈00:05–00:13 BST) windows and link them in the demo materials.
+1. Embed the new Grafana PNGs from `results/grafana/` into slide deck / docs.
 2. Archive console evidence: trim `hpa-watch.log` / `hpa-watch-harmony.log`, export
    `kubectl describe hpa` snippets, and stash the latest k6 JSON (if long-term tracking
    is required) under `k6/results/`.

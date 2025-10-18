@@ -58,7 +58,7 @@
 - [ ] Automate conflict toggle (delete/recreate backend HPA while applying KEDA ScaledObject) so the demo can flip between "fight" and "harmony" modes live.
 - [x] Parameterize k6 scripts for CPU/memory spikes and queue backlogs; document commands.
 - [x] Dry-run load tests (queue load + demo k6) to provoke conflict; metrics recorded in `hpa-watch.log`.
-- [ ] Capture Grafana "before" snapshots showing conflict (target range 19:39–19:43 BST).
+- [x] Capture Grafana "before" snapshots showing conflict (target range 19:39–19:43 BST).
 - [ ] Log failure symptoms (pod churn, oscillation, SLA breaches) for the talk narrative.
 
 **Progress & Follow-ups**
@@ -66,6 +66,7 @@
 - Authored `scripts/nats-queue-load.sh` to launch in-cluster `nats bench` jobs; documented usage in `docs/auto-scaling.md` and `stress/README.md`.
 - Conducted 2025-10-14 conflict run: `nats-queue-load` hit 10 backend replicas, manual HPA pegged CPU 93 %/50 %, frontend stayed at 1 pod until k6 ramp.
 - Conducted 2025-10-18 harmony run (KEDA-only): JetStream load scaled backend 1→4→8→10 replicas per `kubectl describe hpa`; frontend only scaled during the k6 rehearsal.
+- Captured autoscaling dashboard snapshots (conflict vs harmony) in `results/grafana/` for deck inclusion.
 - Next action: capture Grafana before/after panels and annotate failure symptoms for the narrative.
 
 ### Phase 4 – Harmony Implementation → M4 *(Planned)*

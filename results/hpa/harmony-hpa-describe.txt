@@ -1,0 +1,22 @@
+Name:                                                keda-hpa-meme-backend
+Namespace:                                           meme-generator
+Labels:                                              app.kubernetes.io/managed-by=keda-operator
+                                                     app.kubernetes.io/name=keda-hpa-meme-backend
+                                                     app.kubernetes.io/part-of=meme-backend
+                                                     app.kubernetes.io/version=2.18.0
+                                                     scaledobject.keda.sh/name=meme-backend
+Annotations:                                         <none>
+CreationTimestamp:                                   Fri, 10 Oct 2025 20:37:14 +0100
+Reference:                                           Deployment/meme-backend
+Metrics:                                             ( current / target )
+  "s0-nats-jetstream-MEMES" (target average value):  0 / 5
+Min replicas:                                        1
+Max replicas:                                        10
+Deployment pods:                                     1 current / 1 desired
+Conditions:
+  Type            Status  Reason            Message
+  ----            ------  ------            -------
+  AbleToScale     True    ReadyForNewScale  recommended size matches current size
+  ScalingActive   True    ValidMetricFound  the HPA was able to successfully calculate a replica count from external metric s0-nats-jetstream-MEMES(&LabelSelector{MatchLabels:map[string]string{scaledobject.keda.sh/name: meme-backend,},MatchExpressions:[]LabelSelectorRequirement{},})
+  ScalingLimited  True    TooFewReplicas    the desired replica count is less than the minimum replica count
+Events:           <none>
