@@ -147,6 +147,27 @@ for i in {1..20}; do
 done
 ```
 
+#### Option 3: In-Cluster Load Job (Recommended)
+
+```bash
+# Conflict rehearsal (manual HPA + KEDA): heavy queue burst
+./scripts/autoscaler-toggle.sh conflict
+./scripts/nats-queue-load.sh --messages 6000 --clients 60
+
+# Harmony rehearsal (KEDA-only): balanced queue burst
+./scripts/autoscaler-toggle.sh keda-only
+./scripts/nats-queue-load.sh --messages 4000 --clients 40
+
+# Optional: capture k6 demo load immediately after
+k6 run k6/scenarios/2-load-demo.js
+```
+
+Artifacts from the latest rehearsals:
+- HPA logs: `results/hpa/conflict-hpa-snippet.txt`, `results/hpa/harmony-hpa-snippet.txt`
+- `kubectl describe hpa` detail: `results/hpa/harmony-hpa-describe.txt`
+- Grafana renders: `results/grafana/conflict-dashboard.png`, `results/grafana/harmony-dashboard.png`
+- k6 summary (harmony): `results/k6-load-demo-harmony.json`
+
 ### Monitor NATS Queue and Scaling
 
 ```bash

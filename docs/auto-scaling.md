@@ -251,7 +251,11 @@ Ensure you have the following components installed in your Kubernetes cluster:
 1. **Generate Message Queue Load**:
    The preferred approach is to launch the Kubernetes-native load job:
    ```bash
+   # Conflict run (manual HPA + KEDA): saturate with 6k messages / 60 clients
    ./scripts/nats-queue-load.sh --messages 6000 --clients 60
+
+   # Harmony run (KEDA-only): slightly lighter load for graceful scaling
+   ./scripts/nats-queue-load.sh --messages 4000 --clients 40
    ```
    This spins up a `nats-box` Job inside the cluster and publishes valid JSON payloads to `meme.request`, which quickly drives queue depth and KEDA activity.
 
@@ -281,6 +285,11 @@ Ensure you have the following components installed in your Kubernetes cluster:
    kubectl port-forward svc/nats -n messaging 8222:8222
    ```
    Then open http://localhost:8222/jsz in your browser to see JetStream stats.
+
+4. **Compare runs**:
+   - Conflict (manual HPA present): see `results/hpa/conflict-hpa-snippet.txt` and Grafana capture `results/grafana/conflict-dashboard.png` for the 10-pod surge and CPU conflict.
+   - Harmony (KEDA-only): see `results/hpa/harmony-hpa-snippet.txt`, `results/hpa/harmony-hpa-describe.txt`, and `results/grafana/harmony-dashboard.png` for balanced scaling.
+   - k6 metrics (harmony) stored at `results/k6-load-demo-harmony.json` for latency/error references.
 
 ### Testing Redis VPA
 

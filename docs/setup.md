@@ -91,8 +91,8 @@ kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
 ```
 
 Then open [http://localhost:3000](http://localhost:3000) and log in with:
-- Username: admin
-- Password: meme-battle
+- Username: admin (see `kubectl get secret prometheus-grafana -n monitoring -o jsonpath='{.data.admin-password}' | base64 --decode` if rotated)
+- Password: password (default from secret unless overwritten)
 
 ## Next Steps
 
@@ -101,3 +101,4 @@ After completing the infrastructure setup, proceed to:
 1. Phase 2: Implement the Rust backend service that will be scaled by KEDA based on NATS queue depth
 2. Phase 3: Implement the React frontend that will be scaled by HPA
 3. Provision Hugging Face credentials: create the `meme-generator-secrets` secret with a valid `HF_API_TOKEN` and, if necessary, set `HF_API_URL` to the FLUX router endpoint so inference requests succeed in the demo environment.
+4. Import the autoscaling Grafana dashboard (`k8s/monitoring/complete-dashboard.json`) and use the render API to capture conflict/harmony snapshots (`results/grafana/*.png`).
