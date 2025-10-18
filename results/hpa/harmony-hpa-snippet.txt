@@ -1,0 +1,124 @@
+===== Sat 18 Oct 2025 00:05:07 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 0%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:05:17 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 0%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:05:28 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 0%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:05:39 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:05:49 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:06:00 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:06:11 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:06:21 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:06:32 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:06:43 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:06:54 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:07:04 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:07:15 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:07:26 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:07:36 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         2          7d12h
+===== Sat 18 Oct 2025 00:07:47 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:07:58 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:08:09 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:08:19 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:08:30 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:08:41 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:08:51 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:09:02 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:09:13 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:09:23 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:09:34 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:09:45 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:09:55 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:10:06 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:10:17 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        1          7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 1%/30%, memory: 8%/70%   1         5         1          7d12h
+===== Sat 18 Oct 2025 00:12:10 BST =====
+NAME                      REFERENCE                            TARGETS                       MINPODS   MAXPODS   REPLICAS   AGE
+keda-hpa-meme-backend     Deployment/meme-backend              0/5 (avg)                     1         10        10         7d3h
+meme-generator-frontend   Deployment/meme-generator-frontend   cpu: 0%/30%, memory: 8%/70%   1         5         1          7d12h
