@@ -56,12 +56,18 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. Embed/annotate Grafana PNGs (`results/grafana/`) in slides/docs to tell the
-   “autoscalers fighting” → “coordinated orchestra” story.
-2. Curate failure symptom log (events, pod restarts, queue lag) for the conflict run and
-   drop excerpts into `docs/demo-roadmap.md` / slide notes.
-3. Draft demo narration aligned with the abstract: hook → conflict demo → harmony demo →
-   lessons (Prometheus Adapter, business KPIs, autoscaler orchestration).
+1. **Custom metrics:** Finish Prometheus Adapter integration  
+   - Current: adapter Helm release installed in `monitoring`, but `v1beta1.custom.metrics.k8s.io`
+     returns 404 (FailedDiscoveryCheck).  
+   - Needed: craft a valid `rules.custom` entry (start with namespace-level CPU or queue lag),
+     update ConfigMap, ensure APIService becomes `Available`, and confirm metric via  
+     `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/<metric>'`.
+2. **Narrative assets:** Embed/annotate Grafana PNGs (`results/grafana/*.png`) in slides/docs to
+   illustrate “autoscalers fighting” vs “coordinated orchestra.”
+3. **Failure symptoms:** Curate conflict evidence (events, pod churn, queue lag) and add snippets
+   to `docs/demo-roadmap.md` / slide notes to dramatize Act 1.
+4. **Demo script:** Draft spoken flow matching the abstract  
+   *(Hook → Conflict demo → Harmony demo → Prometheus Adapter vision → Takeaways).*
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).
