@@ -4,6 +4,17 @@
 - **Primary goal**: Deliver a live demo showing HPA, VPA, and KEDA acting in concert on the meme-generator stack.
 - **Supporting goals**: (1) Expose chaotic baseline, (2) establish unified observability, (3) execute tuned orchestration run, (4) publish repeatable runbook.
 
+### Talk Abstract & Promise
+- **Hook**: “Your autoscalers are fighting.” HPA scales out, VPA scales up, and KEDA drains
+  the queue—a war that thrashes resources.
+- **Live proof**: Use the meme-generator stack to unleash a deliberate scaling conflict,
+  watch Grafana prove the chaos, then flip to harmony and see HPA/VPA/KEDA move in
+  concert.
+- **Audience takeaways**:
+  1. Connect custom business metrics to the HPA via Prometheus Adapter.
+  2. Scale on P99 latency/error rates instead of raw CPU/memory for stability and cost.
+  3. Orchestrate HPA, VPA, and KEDA so each does the right job without conflicts.
+
 ## Milestones
 | ID | Description | Status |
 |----|-------------|--------|

@@ -7,6 +7,10 @@ issue so the next agent can resume without interviewing humans.
 ---
 
 ## 1. Current Situation (Rolling Update)
+- **Talk promise.** “Your autoscalers are fighting”—we now have the live evidence to
+  show the chaos (manual HPA + KEDA + VPA) and the harmony once observability + business
+  metrics guide the controllers. Attendees learn custom metrics via Prometheus Adapter,
+  business-driven scaling, and orchestration of HPA/VPA/KEDA.
 - **Conflict baseline locked in.** Manual HPA + KEDA conflict run (2025-10-14 19:40–19:42 BST)
   produced the expected 10→10 replica tug-of-war with CPU saturation (`hpa-watch.log`,
   `results/hpa/conflict-hpa-snippet.txt`, `results/grafana/conflict-dashboard.png`).
@@ -52,13 +56,12 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. Embed/annotate Grafana PNGs (`results/grafana/`) in slides/docs to tell the conflict →
-   harmony story.
+1. Embed/annotate Grafana PNGs (`results/grafana/`) in slides/docs to tell the
+   “autoscalers fighting” → “coordinated orchestra” story.
 2. Curate failure symptom log (events, pod restarts, queue lag) for the conflict run and
-   drop excerpts into `docs/demo-roadmap.md`.
-3. Draft demo narration + runbook updates outlining when to trigger
-   `autoscaler-toggle.sh conflict/keda-only`, when to launch queue load + k6, and how to
-   describe the observed metrics.
+   drop excerpts into `docs/demo-roadmap.md` / slide notes.
+3. Draft demo narration aligned with the abstract: hook → conflict demo → harmony demo →
+   lessons (Prometheus Adapter, business KPIs, autoscaler orchestration).
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).
