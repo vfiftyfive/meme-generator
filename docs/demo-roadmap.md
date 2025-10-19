@@ -9,8 +9,8 @@
 |----|-------------|--------|
 | M1 | Environment baseline verified | Completed |
 | M2 | Observability stack ready | Completed |
-| M3 | Conflict scenario scripted | Planned |
-| M4 | Coordinated scaling delivered | Planned |
+| M3 | Conflict scenario scripted | In Progress |
+| M4 | Coordinated scaling delivered | In Progress |
 | M5 | Demo runbook finalized | Planned |
 
 ## Pre-Demo Infrastructure Checklist
@@ -55,7 +55,7 @@
 - Added lightweight Redis deployment (`k8s/cache/simple-redis.yaml`) for the demo cluster to avoid private Bitnami image pulls.
 
 ### Phase 3 – Chaos Scenario → M3 *(Planned)*
-- [ ] Automate conflict toggle (delete/recreate backend HPA while applying KEDA ScaledObject) so the demo can flip between "fight" and "harmony" modes live.
+- [ ] Automate conflict toggle (delete/recreate backend HPA while applying KEDA ScaledObject) so the demo can flip between "fight" and "harmony" modes live (currently manual via `autoscaler-toggle.sh`).
 - [x] Parameterize k6 scripts for CPU/memory spikes and queue backlogs; document commands.
 - [x] Dry-run load tests (queue load + demo k6) to provoke conflict; metrics recorded in `hpa-watch.log`.
 - [x] Capture Grafana "before" snapshots showing conflict (target range 19:39–19:43 BST).
@@ -67,7 +67,8 @@
 - Conducted 2025-10-14 conflict run: `nats-queue-load` hit 10 backend replicas, manual HPA pegged CPU 93 %/50 %, frontend stayed at 1 pod until k6 ramp.
 - Conducted 2025-10-18 harmony run (KEDA-only): JetStream load scaled backend 1→4→8→10 replicas per `kubectl describe hpa`; frontend only scaled during the k6 rehearsal.
 - Captured autoscaling dashboard snapshots (conflict vs harmony) in `results/grafana/` for deck inclusion.
-- Next action: capture Grafana before/after panels and annotate failure symptoms for the narrative.
+- Captured autoscaling dashboard snapshots (conflict vs harmony) in `results/grafana/` for deck inclusion.
+- Next actions: curate failure symptoms (events, pod churn, queue lag) and weave them into the Phase 3 narrative.
 
 ### Phase 4 – Harmony Implementation → M4 *(Planned)*
 - [ ] Wire custom metrics into HPA (queue depth per pod, meme latency histogram).
@@ -78,7 +79,7 @@
 - Ran KEDA-only harmony rehearsal (2025-10-18 00:12 BST): queue load drove `keda-hpa-meme-backend`
   to 10 replicas without manual HPA intervention; backend downscales after cooldown while frontend
   stabilises at two pods during the k6 demo load.
-- Still need Grafana "after" panels and narrative comparing conflict vs harmony scaling curves.
+- Still need Grafana "after" annotations in slides and narrative comparing conflict vs harmony scaling curves.
 
 ### Phase 5 – Runbook & Rehearsal → M5 *(Planned)*
 - [ ] Draft demo script: timing, terminal layout, Grafana panels, meme transitions.

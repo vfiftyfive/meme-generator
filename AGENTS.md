@@ -7,21 +7,25 @@ issue so the next agent can resume without interviewing humans.
 ---
 
 ## 1. Current Situation (Rolling Update)
-- Conflict run (manual HPA + KEDA) succeeded on 2025-10-14 19:40–19:42 BST: queue load
-  pushed the metric to `6k/5`, manual HPA escalated to 10 replicas, and KEDA’s HPA chased
-  to 10/10 (`hpa-watch.log` records the fight).
-- Harmony run (KEDA-only) succeeded on 2025-10-18 00:12 BST: queue load via
-  `scripts/nats-queue-load.sh --messages 6000 --clients 60` (and a follow-up 4k/40 run)
-  drove `keda-hpa-meme-backend` to 10 replicas without the manual HPA (`hpa-watch-harmony.log:567`
-  and `kubectl describe hpa` events show 1→4→8→10 scaling).
-- Frontend HPA reacted during both demo loads: conflict run hit cpu 44 %/30 % with two
-  replicas; harmony run showed cpu 11 %/30 % at 00:05 BST before scaling back down
-  (`hpa-watch-harmony.log:505` onwards).
-- `scripts/nats-queue-load.sh` now uses an Alpine pod that downloads the NATS CLI, so
-  load jobs run inside the cluster without GHCR pulls; latest jobs (`nats-queue-load-5n6wr`,
-  `nats-queue-load-pqm6z`) completed successfully.
-- Grafana screenshots captured via render API: see `results/grafana/conflict-dashboard.png`
-  and `results/grafana/harmony-dashboard.png` for before/after visuals.
+- **Conflict baseline locked in.** Manual HPA + KEDA conflict run (2025-10-14 19:40–19:42 BST)
+  produced the expected 10→10 replica tug-of-war with CPU saturation (`hpa-watch.log`,
+  `results/hpa/conflict-hpa-snippet.txt`, `results/grafana/conflict-dashboard.png`).
+- **Harmony story captured.** KEDA-only run (2025-10-18 00:12 BST) scaled smoothly from
+  1→10 replicas and back with minimal oscillation; frontend HPA briefly scaled at k6 peak
+  (`hpa-watch-harmony.log`, `results/hpa/harmony-hpa-snippet.txt`,
+  `results/grafana/harmony-dashboard.png`, `results/k6-load-demo-harmony.json`).
+- **Tooling hardened.** `scripts/nats-queue-load.sh` now runs entirely in-cluster and
+  supports conflict/harmony presets; dashboards are importable/renderable on demand.
+- **Docs updated.** Auto-scaling/testing/setup guides point to the new workflows and
+  artifacts; roadmap reflects both runs and remaining narrative tasks.
+
+### Caveats & Unknowns
+- Failure symptom log (events, pod churn) still needs to be curated for the conflict
+  storyline.
+- Grafana renders cover key windows but slide integration and annotations remain.
+- Automatic toggle between conflict/harmony is still manual (`autoscaler-toggle.sh`);
+  scripting/automation for live demo flip is pending.
+- Need to validate downscale timing post-harmony run once background pods settle.
 
 _When you finish a task, refresh this section with bullet points summarising new
 facts, blockers, or hand-offs._
@@ -48,13 +52,13 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. Embed the new Grafana PNGs from `results/grafana/` into slide deck / docs.
-2. Archive console evidence: trim `hpa-watch.log` / `hpa-watch-harmony.log`, export
-   `kubectl describe hpa` snippets, and stash the latest k6 JSON (if long-term tracking
-   is required) under `k6/results/`.
-3. Script the harmony narrative in `docs/demo-roadmap.md`: highlight the manual HPA vs
-   KEDA tug-of-war, the KEDA-only scaling curve, and outline how to flip between
-   `./scripts/autoscaler-toggle.sh conflict` ↔ `keda-only` during the demo.
+1. Embed/annotate Grafana PNGs (`results/grafana/`) in slides/docs to tell the conflict →
+   harmony story.
+2. Curate failure symptom log (events, pod restarts, queue lag) for the conflict run and
+   drop excerpts into `docs/demo-roadmap.md`.
+3. Draft demo narration + runbook updates outlining when to trigger
+   `autoscaler-toggle.sh conflict/keda-only`, when to launch queue load + k6, and how to
+   describe the observed metrics.
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).
