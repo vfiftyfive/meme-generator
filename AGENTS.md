@@ -6,11 +6,8 @@ issue so the next agent can resume without interviewing humans.
 
 ---
 
-## 1. Current Situation (Rolling Update)
-- **Talk promise.** “Your autoscalers are fighting”—we now have the live evidence to
-  show the chaos (manual HPA + KEDA + VPA) and the harmony once observability + business
-  metrics guide the controllers. Attendees learn custom metrics via Prometheus Adapter,
-  business-driven scaling, and orchestration of HPA/VPA/KEDA.
+- **Talk promise.** “Your autoscalers are fighting”—we have live chaos/harmony evidence and
+  are adding custom metrics so HPA decisions follow business KPIs (Prometheus Adapter path).
 - **Conflict baseline locked in.** Manual HPA + KEDA conflict run (2025-10-14 19:40–19:42 BST)
   produced the expected 10→10 replica tug-of-war with CPU saturation (`hpa-watch.log`,
   `results/hpa/conflict-hpa-snippet.txt`, `results/grafana/conflict-dashboard.png`).
@@ -18,10 +15,12 @@ issue so the next agent can resume without interviewing humans.
   1→10 replicas and back with minimal oscillation; frontend HPA briefly scaled at k6 peak
   (`hpa-watch-harmony.log`, `results/hpa/harmony-hpa-snippet.txt`,
   `results/grafana/harmony-dashboard.png`, `results/k6-load-demo-harmony.json`).
-- **Tooling hardened.** `scripts/nats-queue-load.sh` now runs entirely in-cluster and
-  supports conflict/harmony presets; dashboards are importable/renderable on demand.
-- **Docs updated.** Auto-scaling/testing/setup guides point to the new workflows and
-  artifacts; roadmap reflects both runs and remaining narrative tasks.
+- **Prometheus Adapter installed.** Helm release exposes `memegenerator_cpu_rate` under
+  `custom.metrics.k8s.io/v1beta1`. APIService is healthy; query returns schema but no samples
+  yet—Prometheus isn’t surfacing `container_cpu_usage_seconds_total` for namespace
+  `meme-generator` (investigate scrape config / relabeling).
+- **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
+  importable/renderable on demand; docs reference new workflows.
 
 ### Caveats & Unknowns
 - Failure symptom log (events, pod churn) still needs to be curated for the conflict
@@ -57,17 +56,19 @@ your work alters the flow.
 
 ## 3. Immediate Next Actions
 1. **Custom metrics:** Finish Prometheus Adapter integration  
-   - Current: adapter Helm release installed in `monitoring`, but `v1beta1.custom.metrics.k8s.io`
-     returns 404 (FailedDiscoveryCheck).  
-   - Needed: craft a valid `rules.custom` entry (start with namespace-level CPU or queue lag),
-     update ConfigMap, ensure APIService becomes `Available`, and confirm metric via  
-     `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/<metric>'`.
+   - Current: chart deployed with `memegenerator_cpu_rate` metric but Prometheus isn’t
+     returning samples (likely scrape/rule issue for `container_cpu_usage_seconds_total` in
+     namespace `meme-generator`).  
+   - Needed: confirm Prom scrapes kube-state-metrics/kubelet for workloads, adjust
+     relabeling/service monitors as required, then re-verify via:  
+     `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_cpu_rate'`.
+   - Stretch: once data flows, wire an HPA to this metric for the demo.
 2. **Narrative assets:** Embed/annotate Grafana PNGs (`results/grafana/*.png`) in slides/docs to
    illustrate “autoscalers fighting” vs “coordinated orchestra.”
 3. **Failure symptoms:** Curate conflict evidence (events, pod churn, queue lag) and add snippets
    to `docs/demo-roadmap.md` / slide notes to dramatize Act 1.
 4. **Demo script:** Draft spoken flow matching the abstract  
-   *(Hook → Conflict demo → Harmony demo → Prometheus Adapter vision → Takeaways).*
+   *(Hook → Conflict demo → Harmony demo → Prometheus Adapter vision → Takeaways).* 
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).
