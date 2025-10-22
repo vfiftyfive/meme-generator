@@ -28,6 +28,13 @@ issue so the next agent can resume without interviewing humans.
 - Grafana renders cover key windows but slide integration and annotations remain.
 - Automatic toggle between conflict/harmony is still manual (`autoscaler-toggle.sh`);
   scripting/automation for live demo flip is pending.
+- Prometheus Adapter exposes `memegenerator_cpu_rate` but the query currently returns an
+  empty list because Prometheus drops `container_cpu_usage_seconds_total` samples when the
+  `id`/`pod` labels are blank. Kubelet scrape (`prometheus-kube-prometheus-kubelet`
+  ServiceMonitor) has a relabel rule `action: drop` on `id,pod`; adjust it (or add a
+  dedicated ServiceMonitor) so pods in the `meme-generator` namespace keep those labels, or
+  switch to a kube-state-metrics based metric (e.g. `kube_deployment_status_replicas`) for
+  the demo. See immediate actions for details.
 - Need to validate downscale timing post-harmony run once background pods settle.
 
 _When you finish a task, refresh this section with bullet points summarising new
@@ -56,12 +63,19 @@ your work alters the flow.
 
 ## 3. Immediate Next Actions
 1. **Custom metrics:** Finish Prometheus Adapter integration  
-   - Current: chart deployed with `memegenerator_cpu_rate` metric but Prometheus isn’t
-     returning samples (likely scrape/rule issue for `container_cpu_usage_seconds_total` in
-     namespace `meme-generator`).  
-   - Needed: confirm Prom scrapes kube-state-metrics/kubelet for workloads, adjust
-     relabeling/service monitors as required, then re-verify via:  
-     `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_cpu_rate'`.
+   - Current: chart exposes `memegenerator_cpu_rate`, APIService healthy, but
+     `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_cpu_rate'`
+     returns `items: []`. Kubelet scrape drops entries where `id`/`pod` labels are empty, so
+     our containers disappear before recording.  
+   - Options:  
+     a) Patch `ServiceMonitor/prometheus-kube-prometheus-kubelet` to remove the
+        `action: drop` relabel on `id,pod` for namespace `meme-generator`. One approach is to
+        add an override ServiceMonitor in `k8s/monitoring/` that sets `sampleLimit: 0` and
+        keeps the labels for our namespace.  
+     b) Instead, source a metric from kube-state-metrics (e.g. `kube_deployment_status_replicas`
+        or `kube_pod_container_resource_requests`) and update the adapter rule accordingly.  
+   - Verify after adjustments with:  
+     `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_cpu_rate'` and pod-level query.  
    - Stretch: once data flows, wire an HPA to this metric for the demo.
 2. **Narrative assets:** Embed/annotate Grafana PNGs (`results/grafana/*.png`) in slides/docs to
    illustrate “autoscalers fighting” vs “coordinated orchestra.”
