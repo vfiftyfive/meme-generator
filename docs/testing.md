@@ -167,6 +167,14 @@ Artifacts from the latest rehearsals:
 - `kubectl describe hpa` detail: `results/hpa/harmony-hpa-describe.txt`
 - Grafana renders: `results/grafana/conflict-dashboard.png`, `results/grafana/harmony-dashboard.png`
 - k6 summary (harmony): `results/k6-load-demo-harmony.json`
+- Custom metric (Prometheus Adapter):
+  ```bash
+  # Pod-level values (non-zero during load)
+  kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_pod_cpu_rate'
+
+  # Namespace roll-up
+  kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_pod_cpu_rate'
+  ```
 
 ### Monitor NATS Queue and Scaling
 

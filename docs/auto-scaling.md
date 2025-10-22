@@ -332,9 +332,48 @@ VPA operates over longer time periods, so you'll need to:
 
 3. **Useful Metrics to Monitor**:
    - HPA metrics: `kube_horizontalpodautoscaler_status_*`
-   - Pod metrics: `container_cpu_usage_seconds_total`, `container_memory_usage_bytes`
-   - NATS metrics: `nats_jetstream_consumer_*`, `nats_jetstream_stream_*`
-   - Redis metrics: `redis_memory_used_bytes`, `redis_cpu_sys_seconds_total`
+- Pod metrics: `container_cpu_usage_seconds_total`, `container_memory_usage_bytes`
+- NATS metrics: `nats_jetstream_consumer_*`, `nats_jetstream_stream_*`
+- Redis metrics: `redis_memory_used_bytes`, `redis_cpu_sys_seconds_total`
+
+### Publishing Custom Metrics (Prometheus Adapter)
+
+To scale on business-aware signals we install [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter)
+with a custom rule that emits `memegenerator_pod_cpu_rate` (per-pod CPU rate restricted to
+the `meme-generator` namespace). The Helm values live in
+`k8s/monitoring/prometheus-adapter-values.yaml`.
+
+```bash
+# Install/upgrade the adapter
+helm upgrade --install prometheus-adapter \
+  prometheus-community/prometheus-adapter \
+  -n monitoring \
+  -f k8s/monitoring/prometheus-adapter-values.yaml
+
+# Observe pod-level values (non-zero when load is running)
+kubectl get --raw \
+  '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_pod_cpu_rate'
+
+# Namespace roll-up
+kubectl get --raw \
+  '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_pod_cpu_rate'
+
+# Generate some load to see >0 results
+./scripts/nats-queue-load.sh --messages 500 --clients 20
+```
+
+Add the metric to the backend HPA using the Pods metric type when you want the deployment to
+react to this signal:
+
+```yaml
+- type: Pods
+  pods:
+    metric:
+      name: memegenerator_pod_cpu_rate
+    target:
+      type: AverageValue
+      averageValue: "10m"   # adjust threshold to taste
+```
 
 ## Troubleshooting
 
