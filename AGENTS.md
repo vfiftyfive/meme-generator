@@ -5,7 +5,7 @@ this repository. Update it every time we complete a milestone or uncover a new
 issue so the next agent can resume without interviewing humans.
 
 ---
-
+## 1. Current Situation (Rolling Update)
 - **Talk promise.** “Your autoscalers are fighting”—we have live chaos/harmony evidence and
   are adding custom metrics so HPA decisions follow business KPIs (Prometheus Adapter path).
 - **Conflict baseline locked in.** Manual HPA + KEDA conflict run (2025-10-14 19:40–19:42 BST)
