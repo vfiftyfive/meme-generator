@@ -103,8 +103,16 @@ Follow these steps after the `meme-demo` cluster is created and credentials are 
   # Manual HPA only (baseline / teardown)
   ./scripts/autoscaler-toggle.sh hpa-only
   ```
+- The conflict toggle now cleans up existing HPAs/ScaledObjects before applying the requested mode.
+  If the webhook still blocks a new ScaledObject (e.g., during rapid flips), rerun the command.
 - Check autoscaler objects at any time: `./scripts/autoscaler-toggle.sh status`.
 - Capture Grafana snapshots immediately after staging the conflict—these become the “before” panels for the talk.
+- For slides, annotate `results/grafana/conflict-dashboard.png` with the timestamped pod churn
+  from `results/hpa/conflict-current-pods.txt`, then mirror that with
+  `results/grafana/harmony-dashboard.png` + `results/hpa/harmony-memegenerator-pod-metric-peak.json`
+  to show the custom metric harmony run.
+- Include panels for `rate(container_cpu_cfs_throttled_seconds_total[1m])` (CPU throttling) and
+  `memegenerator_pod_productivity` so the “lie vs ground truth” storyline is visible during the demo.
 ## 7. External DNS & Verification
 - Update the Cloud DNS A record so `meme-generator.scaleops-labs.dev` points to the load-balancer IP (check with `kubectl get ingress meme-generator -n meme-generator`):
   ```bash

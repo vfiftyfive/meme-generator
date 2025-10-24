@@ -15,10 +15,12 @@ issue so the next agent can resume without interviewing humans.
   1→10 replicas and back with minimal oscillation; frontend HPA briefly scaled at k6 peak
   (`hpa-watch-harmony.log`, `results/hpa/harmony-hpa-snippet.txt`,
   `results/grafana/harmony-dashboard.png`, `results/k6-load-demo-harmony.json`).
-- **Prometheus Adapter installed.** Helm release exposes `memegenerator_cpu_rate` under
-  `custom.metrics.k8s.io/v1beta1`. APIService is healthy; query returns schema but no samples
-  yet—Prometheus isn’t surfacing `container_cpu_usage_seconds_total` for namespace
-  `meme-generator` (investigate scrape config / relabeling).
+- **Prometheus Adapter integrated.** Helm release exposes both `memegenerator_pod_cpu_rate` and
+  the new translator metric `memegenerator_pod_productivity`. The manual HPA consumes the CPU rate;
+  the harmony KEDA ScaledObject consumes productivity via Prometheus trigger. Evidence for both
+  modes lives under `results/hpa/harmony-*`.
+- **Conflict evidence refreshed.** Latest 6k-message burst under chaos mode (`./scripts/autoscaler-toggle.sh chaos`)
+  captured in `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}`.
 - **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
   importable/renderable on demand; docs reference new workflows.
 
@@ -26,12 +28,11 @@ issue so the next agent can resume without interviewing humans.
 - Failure symptom log (events, pod churn) still needs to be curated for the conflict
   storyline.
 - Grafana renders cover key windows but slide integration and annotations remain.
-- Automatic toggle between conflict/harmony is still manual (`autoscaler-toggle.sh`);
-  scripting/automation for live demo flip is pending.
-- `memegenerator_pod_cpu_rate` stays `0` when idle but jumps under load (e.g. `11m` after
-  running `./scripts/nats-queue-load.sh --messages 500 --clients 20`). Query with:
-  `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_pod_cpu_rate'`.
-- Need to validate downscale timing post-harmony run once background pods settle.
+- `scripts/autoscaler-toggle.sh` now supports `chaos`, `harmony`, `conflict`, `keda-only`, and `hpa-only`.
+  Always reset to `hpa-only` when you’re done rehearsing.
+- `memegenerator_pod_cpu_rate` stays `0` when idle but jumps under load (peaks ~30–90 m). Target sits at `20m`.
+  Productivity metric is namespace-scoped—query with:
+  `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_pod_productivity'`.
 
 _When you finish a task, refresh this section with bullet points summarising new
 facts, blockers, or hand-offs._
@@ -41,8 +42,8 @@ facts, blockers, or hand-offs._
 ## 2. Where To Find Plans & Context
 - **High-level roadmap:** `docs/demo-roadmap.md` → phases M1-M5 with checklists and
   rehearsal notes. Update milestone status as work progresses.
-- **Autoscaling runbook:** `docs/auto-scaling.md` → operational steps for HPA/KEDA/VPA,
-  now including the queue load job instructions.
+- **Autoscaling runbook:** `docs/auto-scaling.md` → operational steps for HPA/KEDA, custom metrics,
+  and load jobs (plus future VPA notes).
 - **Load testing suite:** `k6/README.md` and `k6/run-tests.sh`; menu option 7 runs the
   new demo scenario. Raw outputs land in `k6/results/` (gitignored).
 - **Stress toolbox:** `stress/README.md` describes both the Python burst script and the
@@ -51,6 +52,7 @@ facts, blockers, or hand-offs._
   `scripts/autoscaler-toggle.sh`.
 - **Observability how-to:** `docs/observability-gke.md` → Grafana import steps,
   port-forwarding, dashboard IDs.
+- **Demo script:** `docs/demo-script.md` → running order, live commands, reset checklist.
 
 Before making changes, skim these docs to confirm assumptions and update them if
 your work alters the flow.
@@ -58,16 +60,14 @@ your work alters the flow.
 ---
 
 ## 3. Immediate Next Actions
-1. **Custom metrics:** DONE – `memegenerator_pod_cpu_rate` now published by Prometheus Adapter.
-   - To see values: `kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/pods/*/memegenerator_pod_cpu_rate'`
-     (non-zero once load is applied). Next logical step is wiring the backend HPA to this metric
-     for the harmony run once we confirm expected behavior under load.
-2. **Narrative assets:** Embed/annotate Grafana PNGs (`results/grafana/*.png`) in slides/docs to
-   illustrate “autoscalers fighting” vs “coordinated orchestra.”
-3. **Failure symptoms:** Curate conflict evidence (events, pod churn, queue lag) and add snippets
-   to `docs/demo-roadmap.md` / slide notes to dramatize Act 1.
-4. **Demo script:** Draft spoken flow matching the abstract  
-   *(Hook → Conflict demo → Harmony demo → Prometheus Adapter vision → Takeaways).* 
+1. **Harmony evidence:** Fold new productivity metrics (`results/hpa/harmony-*.{txt,json}`) into slides/docs
+   so the translator story is front-and-center.
+2. **Conflict visuals:** Incorporate latest chaos snapshots/logs (`results/hpa/conflict-*`) + CPU throttling panel
+   screenshots into slides; highlight the “lie” vs ground truth.
+3. **Narrative assets:** Embed/annotate Grafana PNGs (`results/grafana/*.png`) showing pod count, queue lag,
+   average CPU, and throttling.
+4. **Failure symptoms:** Pull talking points from `results/hpa/conflict-*` + throttling metrics into speaker notes.
+5. **Demo script review:** Walk stakeholders through `docs/demo-script.md`; capture feedback and integrate into slides.
 
 If commands cannot be executed (permissions/offline mode), note what was skipped,
 why, and the prep work done instead (e.g., scripted instructions, dry runs).

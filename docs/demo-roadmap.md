@@ -1,27 +1,25 @@
 # Demo Roadmap: Autoscaler Harmony
 
 ## Vision & Goals
-- **Primary goal**: Deliver a live demo showing HPA, VPA, and KEDA acting in concert on the meme-generator stack.
-- **Supporting goals**: (1) Expose chaotic baseline, (2) establish unified observability, (3) execute tuned orchestration run, (4) publish repeatable runbook.
+- **Primary goal**: Deliver a live demo proving how HPA/KEDA conflict arises from “lying” metrics and how a custom business metric restores harmony.
+- **Supporting goals**: (1) Expose the chaotic baseline (“autoscaler fight”), (2) instrument the real signals (CPU throttling + productivity), (3) flip to the translator metric, (4) ship a repeatable runbook for both modes.
 
 ### Talk Abstract & Promise
-- **Hook**: “Your autoscalers are fighting.” HPA scales out, VPA scales up, and KEDA drains
-  the queue—a war that thrashes resources.
-- **Live proof**: Use the meme-generator stack to unleash a deliberate scaling conflict,
-  watch Grafana prove the chaos, then flip to harmony and see HPA/VPA/KEDA move in
-  concert.
+- **Hook**: “Your autoscalers are fighting.” The Metrics API says everything is fine while the
+  kernel is throttling like mad.
+- **Live proof**: Use the meme-generator stack to unleash a deliberate KEDA/HPA conflict (queue lag vs average CPU), then replace the “lie” with a productivity metric and watch the cluster calm down.
 - **Audience takeaways**:
-  1. Connect custom business metrics to the HPA via Prometheus Adapter.
-  2. Scale on P99 latency/error rates instead of raw CPU/memory for stability and cost.
-  3. Orchestrate HPA, VPA, and KEDA so each does the right job without conflicts.
+  1. Detect the lie (average CPU) by pairing Grafana with kernel throttling metrics.
+  2. Translate autoscalers with Prometheus Adapter + custom productivity metric.
+  3. Separate duties: KEDA/HPA react fast to business KPIs; VPA (future work) right-sizes slowly.
 
 ## Milestones
 | ID | Description | Status |
 |----|-------------|--------|
 | M1 | Environment baseline verified | Completed |
 | M2 | Observability stack ready | Completed |
-| M3 | Conflict scenario scripted | In Progress |
-| M4 | Coordinated scaling delivered | In Progress |
+| M3 | Conflict scenario scripted | Completed |
+| M4 | Translator metric delivered | In Progress |
 | M5 | Demo runbook finalized | Planned |
 
 ## Pre-Demo Infrastructure Checklist
@@ -65,12 +63,12 @@
 - Rotated the `HF_API_TOKEN` secret to the live key and restarted the backend; Hugging Face requests now return 200s (402s resolved).
 - Added lightweight Redis deployment (`k8s/cache/simple-redis.yaml`) for the demo cluster to avoid private Bitnami image pulls.
 
-### Phase 3 – Chaos Scenario → M3 *(Planned)*
-- [ ] Automate conflict toggle (delete/recreate backend HPA while applying KEDA ScaledObject) so the demo can flip between "fight" and "harmony" modes live (currently manual via `autoscaler-toggle.sh`).
+### Phase 3 – Chaos Scenario → M3 *(Completed)*
+- [x] Automate chaos toggle (`./scripts/autoscaler-toggle.sh chaos`) with conflicting KEDA triggers so we can flip live during the talk.
 - [x] Parameterize k6 scripts for CPU/memory spikes and queue backlogs; document commands.
 - [x] Dry-run load tests (queue load + demo k6) to provoke conflict; metrics recorded in `hpa-watch.log`.
 - [x] Capture Grafana "before" snapshots showing conflict (target range 19:39–19:43 BST).
-- [ ] Log failure symptoms (pod churn, oscillation, SLA breaches) for the talk narrative.
+- [x] Log failure symptoms (pod churn, oscillation, SLA breaches) for the talk narrative.
 
 **Progress & Follow-ups**
 - Added `k6/scenarios/2-load-demo.js` plus runner menu option for the 6-minute conflict rehearsal.
@@ -79,22 +77,32 @@
 - Conducted 2025-10-18 harmony run (KEDA-only): JetStream load scaled backend 1→4→8→10 replicas per `kubectl describe hpa`; frontend only scaled during the k6 rehearsal.
 - Captured autoscaling dashboard snapshots (conflict vs harmony) in `results/grafana/` for deck inclusion.
 - Captured autoscaling dashboard snapshots (conflict vs harmony) in `results/grafana/` for deck inclusion.
+- Logged failure symptoms for Act 1: `results/hpa/conflict-current-pods.txt` (pod churn), `results/hpa/conflict-manual-hpa-describe.txt` + `conflict-keda-hpa-describe.txt` (tug-of-war events), and `results/hpa/conflict-memegenerator-pod-metric.json` (queue lag vs custom metric).
 - Next actions: curate failure symptoms (events, pod churn, queue lag) and weave them into the Phase 3 narrative.
 
-### Phase 4 – Harmony Implementation → M4 *(Planned)*
-- [ ] Wire custom metrics into HPA (queue depth per pod, meme latency histogram).
-- [ ] Tune VPA stabilization windows and KEDA cooldown/thresholds.
-- [ ] Redeploy (`skaffold run --profile=gke --tail`); rerun k6 scenario; capture "after" dashboards.
+### Phase 4 – Harmony Implementation → M4 *(In Progress)*
+- [x] Wire `memegenerator_pod_cpu_rate` into backend HPA (target 20m) and expose `memegenerator_pod_productivity` for KEDA harmony mode.
+- [ ] Finalize Grafana harmony panels (CPU throttling flatlines, productivity steady) and capture PNGs.
+- [ ] Redeploy (`skaffold run --profile=gke --tail`); rerun harmony scenario; capture "after" dashboards.
 
 **Progress & Follow-ups**
 - Ran KEDA-only harmony rehearsal (2025-10-18 00:12 BST): queue load drove `keda-hpa-meme-backend`
   to 10 replicas without manual HPA intervention; backend downscales after cooldown while frontend
   stabilises at two pods during the k6 demo load.
 - Installed Prometheus Adapter with `memegenerator_pod_cpu_rate` custom metric to feed the HPA.
+- Backend HPA now scales on `memegenerator_pod_cpu_rate` (20m target); monitor upcoming load runs to retune threshold if needed.
+- Manual HPA-only rehearsal (2025-10-22 16:06 BST): 20k-message burst pushed pods metric to 26–89 m,
+  scaling meme-backend from 1→10 replicas (evidence under
+  `results/hpa/harmony-custom-metric-hpa.txt` + `harmony-memegenerator-pod-metric-peak.json`).
+- Memory metric removed from manual HPA so the harmony story can demonstrate clean 1→10→1 scaling;
+  rely on `memegenerator_pod_cpu_rate` + CPU utilization for this phase.
+- Latest conflict run (2025-10-23 19:50 BST) logged in `results/hpa/conflict-*` for “autoscalers
+  fighting” visuals (manual HPA vs KEDA tug-of-war to 10 replicas).
+- Harmony ScaledObject now uses the `memegenerator_pod_productivity` metric via KEDA’s Prometheus trigger (`./scripts/autoscaler-toggle.sh harmony`).
 - Still need Grafana "after" annotations in slides and narrative comparing conflict vs harmony scaling curves.
 
 ### Phase 5 – Runbook & Rehearsal → M5 *(Planned)*
-- [ ] Draft demo script: timing, terminal layout, Grafana panels, meme transitions.
+- [x] Draft demo script: see `docs/demo-script.md` for flow, commands, and reset steps.
 - [ ] Package reset automation to clear autoscalers and redeploy baseline state.
 - [ ] Conduct full rehearsal; export dashboards/video; update this roadmap with outcomes.
 

@@ -1,0 +1,24 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: meme-backend-harmony
+  namespace: meme-generator
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: meme-backend
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  pollingInterval: 5
+  cooldownPeriod: 60
+  fallback:
+    failureThreshold: 3
+    replicas: 1
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+        metricName: memegenerator_pod_productivity
+        threshold: "0.5"
+        query: memegenerator_pod_productivity

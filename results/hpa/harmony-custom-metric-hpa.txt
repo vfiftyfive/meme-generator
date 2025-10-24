@@ -1,0 +1,42 @@
+Name:                                                     meme-backend
+Namespace:                                                meme-generator
+Labels:                                                   <none>
+Annotations:                                              <none>
+CreationTimestamp:                                        Wed, 22 Oct 2025 17:01:19 +0100
+Reference:                                                Deployment/meme-backend
+Metrics:                                                  ( current / target )
+  "memegenerator_pod_cpu_rate" on pods:                   6m / 20m
+  resource cpu on pods  (as a percentage of request):     1% (1m) / 50%
+  resource memory on pods  (as a percentage of request):  29% (75775181) / 80%
+Min replicas:                                             1
+Max replicas:                                             10
+Behavior:
+  Scale Up:
+    Stabilization Window: 30 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 100  Period: 60 seconds
+      - Type: Pods     Value: 4    Period: 60 seconds
+  Scale Down:
+    Stabilization Window: 300 seconds
+    Select Policy: Max
+    Policies:
+      - Type: Percent  Value: 50  Period: 60 seconds
+Deployment pods:       10 current / 10 desired
+Conditions:
+  Type            Status  Reason               Message
+  ----            ------  ------               -------
+  AbleToScale     True    ScaleDownStabilized  recent recommendations were higher than current one, applying the highest recent recommendation
+  ScalingActive   True    ValidMetricFound     the HPA was able to successfully calculate a replica count from memory resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange   the desired count is within the acceptable range
+Events:
+  Type     Reason                   Age                   From                       Message
+  ----     ------                   ----                  ----                       -------
+  Warning  FailedGetResourceMetric  7m59s (x4 over 8m3s)  horizontal-pod-autoscaler  No recommendation
+  Normal   SuccessfulRescale        4m1s                  horizontal-pod-autoscaler  New size: 2; reason: pods metric memegenerator_pod_cpu_rate above target
+  Normal   SuccessfulRescale        3m46s                 horizontal-pod-autoscaler  New size: 3; reason: pods metric memegenerator_pod_cpu_rate above target
+  Normal   SuccessfulRescale        3m30s                 horizontal-pod-autoscaler  New size: 5; reason: pods metric memegenerator_pod_cpu_rate above target
+  Normal   SuccessfulRescale        2m30s                 horizontal-pod-autoscaler  New size: 6; reason: pods metric memegenerator_pod_cpu_rate above target
+  Normal   SuccessfulRescale        119s                  horizontal-pod-autoscaler  New size: 8; reason: pods metric memegenerator_pod_cpu_rate above target
+  Normal   SuccessfulRescale        104s                  horizontal-pod-autoscaler  New size: 9; reason: pods metric memegenerator_pod_cpu_rate above target
+  Normal   SuccessfulRescale        74s                   horizontal-pod-autoscaler  New size: 10; reason: pods metric memegenerator_pod_cpu_rate above target

@@ -2,11 +2,11 @@ Name:                                                  meme-backend
 Namespace:                                             meme-generator
 Labels:                                                <none>
 Annotations:                                           <none>
-CreationTimestamp:                                     Thu, 23 Oct 2025 21:00:09 +0100
+CreationTimestamp:                                     Thu, 23 Oct 2025 20:45:18 +0100
 Reference:                                             Deployment/meme-backend
 Metrics:                                               ( current / target )
   "memegenerator_pod_cpu_rate" on pods:                0 / 20m
-  resource cpu on pods  (as a percentage of request):  0% (0) / 50%
+  resource cpu on pods  (as a percentage of request):  1% (1m) / 50%
 Min replicas:                                          1
 Max replicas:                                          10
 Behavior:
@@ -28,4 +28,7 @@ Conditions:
   AbleToScale     True    ReadyForNewScale    recommended size matches current size
   ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
   ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
-Events:           <none>
+Events:
+  Type     Reason                   Age                From                       Message
+  ----     ------                   ----               ----                       -------
+  Warning  FailedGetResourceMetric  11m (x8 over 13m)  horizontal-pod-autoscaler  No recommendation

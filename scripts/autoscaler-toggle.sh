@@ -2,8 +2,25 @@
 set -euo pipefail
 ACTION=${1:-}
 case "$ACTION" in
+  chaos)
+    echo "⚠️ Enabling chaos mode (conflicting triggers in single KEDA ScaledObject)"
+    kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
+    kubectl delete scaledobject.keda.sh meme-backend -n meme-generator --ignore-not-found
+    kubectl delete scaledobject.keda.sh meme-backend-chaos -n meme-generator --ignore-not-found
+    kubectl delete scaledobject.keda.sh meme-backend-harmony -n meme-generator --ignore-not-found
+    kubectl apply -f k8s/scenarios/backend-scaledobject-chaos.yaml
+    ;;
+  harmony)
+    echo "🎼 Enabling harmony mode (productivity-based Prometheus trigger)"
+    kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
+    kubectl delete scaledobject.keda.sh meme-backend -n meme-generator --ignore-not-found
+    kubectl delete scaledobject.keda.sh meme-backend-chaos -n meme-generator --ignore-not-found
+    kubectl delete scaledobject.keda.sh meme-backend-harmony -n meme-generator --ignore-not-found
+    kubectl apply -f k8s/scenarios/backend-scaledobject-harmony.yaml
+    ;;
   conflict)
     echo "🔄 Enabling HPA + KEDA conflict on meme-backend"
+    kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
     kubectl apply -f k8s/base/backend-keda-scaledobject.yaml
     kubectl apply -f k8s/base/backend-hpa.yaml
     ;;
@@ -24,9 +41,11 @@ case "$ACTION" in
     ;;
   *)
     cat <<USAGE
-Usage: $0 {conflict|keda-only|hpa-only|teardown|status}
-  conflict   - ensure both KEDA ScaledObject and manual HPA exist
-  keda-only  - remove manual HPA and rely on KEDA only
+Usage: $0 {chaos|harmony|conflict|keda-only|hpa-only|teardown|status}
+  chaos      - single KEDA ScaledObject with conflicting triggers (demo the fight)
+  harmony    - KEDA ScaledObject using Prometheus productivity metric
+  conflict   - ensure both base KEDA ScaledObject and manual HPA exist
+  keda-only  - remove manual HPA and rely on base KEDA ScaledObject
   hpa-only   - disable KEDA and ensure manual HPA exists
   teardown   - alias for hpa-only
   status     - show autoscaler objects

@@ -362,8 +362,8 @@ kubectl get --raw \
 ./scripts/nats-queue-load.sh --messages 500 --clients 20
 ```
 
-Add the metric to the backend HPA using the Pods metric type when you want the deployment to
-react to this signal:
+The backend HPA now includes this Pods-type metric so scaling decisions react to the adapter
+signal. Tweak the threshold in `k8s/base/backend-hpa.yaml` if your load profile changes:
 
 ```yaml
 - type: Pods
@@ -372,8 +372,28 @@ react to this signal:
       name: memegenerator_pod_cpu_rate
     target:
       type: AverageValue
-      averageValue: "10m"   # adjust threshold to taste
+      averageValue: 20m   # default: scale up once pods sustain ~0.02 cores
 ```
+We intentionally dropped the memory utilization metric from this HPA; backend pods keep caches
+warm between demo segments, and that idle usage held replicas above the target floor. Rely on the
+custom Pods metric plus CPU utilization for the narrative.
+
+To support the new “translator” story we also expose `memegenerator_pod_productivity`, a ratio of
+messages processed per CPU second. This metric is namespace-scoped and powers the harmony KEDA
+ScaledObject via the Prometheus trigger (see `k8s/scenarios/backend-scaledobject-harmony.yaml`).
+Query it directly with:
+
+```bash
+kubectl get --raw \
+  '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_pod_productivity'
+```
+
+### Conflict vs Harmony Quick Reference
+
+| Scenario | Autoscalers | Load command | Replica band | Key artifacts |
+| --- | --- | --- | --- | --- |
+| Chaos (new talk hook) | Single KEDA ScaledObject with CPU + queue triggers (`./scripts/autoscaler-toggle.sh chaos`) | `./scripts/nats-queue-load.sh --messages 6000 --clients 60` | 1→10 oscillation, throttling spikes | `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}`, `results/grafana/conflict-dashboard.png` |
+| Harmony | KEDA Prometheus trigger on `memegenerator_pod_productivity` (`./scripts/autoscaler-toggle.sh harmony`) | `./scripts/nats-queue-load.sh --messages 4000 --clients 40` | 1→10→1 with smooth queue drain | `results/hpa/harmony-{custom-metric-hpa.txt,memegenerator-pod-metric-peak.json}`, `results/grafana/harmony-dashboard.png` |
 
 ## Troubleshooting
 
@@ -388,6 +408,10 @@ react to this signal:
   ```bash
   kubectl describe hpa -n meme-generator
   ```
+- **HPA won't return to min replicas**: Resource-based metrics (e.g., memory utilization)
+  can hold the replica count above `minReplicas` even when custom metrics are idle. Inspect the
+  `kubectl describe hpa` output; if averages remain >0, adjust resource requests/targets or drop
+  that metric for the scenario.
 
 ### KEDA Issues
 

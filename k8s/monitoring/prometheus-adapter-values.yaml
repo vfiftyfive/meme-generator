@@ -12,6 +12,18 @@ rules:
         matches: "^container_cpu_usage_seconds_total$"
         as: memegenerator_pod_cpu_rate
       metricsQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>,namespace="meme-generator"}[2m])) by (namespace,pod)
+    - seriesQuery: 'meme_generator_success_total{namespace!=""}'
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+      name:
+        matches: "^meme_generator_success_total$"
+        as: memegenerator_pod_productivity
+      metricsQuery: |
+        sum(rate(meme_generator_success_total{<<.LabelMatchers>>,namespace="meme-generator"}[2m]))
+        /
+        sum(rate(container_cpu_usage_seconds_total{namespace="meme-generator",container!="",container!="POD"}[2m]))
 prometheus:
   url: http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local
   port: 9090

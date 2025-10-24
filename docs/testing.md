@@ -150,12 +150,12 @@ done
 #### Option 3: In-Cluster Load Job (Recommended)
 
 ```bash
-# Conflict rehearsal (manual HPA + KEDA): heavy queue burst
-./scripts/autoscaler-toggle.sh conflict
+# Chaos rehearsal (single KEDA object with conflicting triggers)
+./scripts/autoscaler-toggle.sh chaos
 ./scripts/nats-queue-load.sh --messages 6000 --clients 60
 
-# Harmony rehearsal (KEDA-only): balanced queue burst
-./scripts/autoscaler-toggle.sh keda-only
+# Harmony rehearsal (productivity-based trigger)
+./scripts/autoscaler-toggle.sh harmony
 ./scripts/nats-queue-load.sh --messages 4000 --clients 40
 
 # Optional: capture k6 demo load immediately after
@@ -164,9 +164,11 @@ k6 run k6/scenarios/2-load-demo.js
 
 Artifacts from the latest rehearsals:
 - HPA logs: `results/hpa/conflict-hpa-snippet.txt`, `results/hpa/harmony-hpa-snippet.txt`
-- `kubectl describe hpa` detail: `results/hpa/harmony-hpa-describe.txt`
+- `kubectl describe hpa` detail: `results/hpa/conflict-manual-hpa-describe.txt`, `results/hpa/conflict-keda-hpa-describe.txt`, `results/hpa/harmony-hpa-describe.txt`
 - Grafana renders: `results/grafana/conflict-dashboard.png`, `results/grafana/harmony-dashboard.png`
 - k6 summary (harmony): `results/k6-load-demo-harmony.json`
+- Custom metric HPA snapshots: `results/hpa/harmony-custom-metric-hpa.txt` plus `harmony-memegenerator-pod-metric{,-peak,-idle}.json`
+- Conflict metric snapshots: `results/hpa/conflict-memegenerator-pod-metric.json`, `results/hpa/conflict-current-pods.txt`
 - Custom metric (Prometheus Adapter):
   ```bash
   # Pod-level values (non-zero during load)
@@ -175,6 +177,8 @@ Artifacts from the latest rehearsals:
   # Namespace roll-up
   kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_pod_cpu_rate'
   ```
+- Slide prep tip: pair `results/grafana/conflict-dashboard.png` with the conflict metric JSON to show “autoscalers fighting,” then contrast with `results/grafana/harmony-dashboard.png` + `harmony-memegenerator-pod-metric-peak.json` for the orchestra story.
+- Slide prep tip: pair `results/grafana/conflict-dashboard.png` with the conflict metric JSON to show “autoscalers fighting,” then contrast with `results/grafana/harmony-dashboard.png` + `harmony-memegenerator-pod-metric-peak.json` for the orchestra story.
 
 ### Monitor NATS Queue and Scaling
 
@@ -193,6 +197,11 @@ You should observe:
 2. New backend pods being created
 3. Messages being processed
 4. Pods scaling back down when the queue is empty
+
+### Grafana Panels to Watch
+- **Pod Count vs Queue Lag:** proves the fight (thrash) or harmony (smooth ramp).
+- **Average CPU % (Metrics API) vs CPU Throttling Rate (kernel):** illustrates “the lie” where averages look fine while throttling spikes (`rate(container_cpu_cfs_throttled_seconds_total[1m])`).
+- **Custom Metric – `memegenerator_pod_productivity`:** shows the translator signal you feed to the autoscaler during the harmony run.
 
 ## 4. Testing Redis VPA
 

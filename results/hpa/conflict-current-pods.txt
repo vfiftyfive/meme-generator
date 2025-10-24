@@ -1,0 +1,11 @@
+NAME                           READY   STATUS    RESTARTS   AGE
+meme-backend-b6c8dd9fc-5m2hf   1/1     Running   0          106s
+meme-backend-b6c8dd9fc-899c2   1/1     Running   0          27h
+meme-backend-b6c8dd9fc-bcczn   1/1     Running   0          76s
+meme-backend-b6c8dd9fc-l4t5r   1/1     Running   0          91s
+meme-backend-b6c8dd9fc-q27rx   1/1     Running   0          76s
+meme-backend-b6c8dd9fc-qr9nl   1/1     Running   0          91s
+meme-backend-b6c8dd9fc-rj5js   1/1     Running   0          91s
+meme-backend-b6c8dd9fc-rjrrd   1/1     Running   0          106s
+meme-backend-b6c8dd9fc-v58pd   1/1     Running   0          106s
+meme-backend-b6c8dd9fc-zln8q   1/1     Running   0          91s

@@ -1,0 +1,35 @@
+{
+  "capturedAt": "2025-10-22T16:06:27Z",
+  "kind": "MetricValueList",
+  "apiVersion": "custom.metrics.k8s.io/v1beta1",
+  "items": [
+    {
+      "pod": "meme-backend-b6c8dd9fc-6jkr7",
+      "value": "9m"
+    },
+    {
+      "pod": "meme-backend-b6c8dd9fc-829ns",
+      "value": "0"
+    },
+    {
+      "pod": "meme-backend-b6c8dd9fc-9j4nd",
+      "value": "89m"
+    },
+    {
+      "pod": "meme-backend-b6c8dd9fc-crtwv",
+      "value": "10m"
+    },
+    {
+      "pod": "meme-backend-b6c8dd9fc-fvffm",
+      "value": "0"
+    },
+    {
+      "pod": "meme-generator-frontend-5f5f96c698-vxbpx",
+      "value": "0"
+    },
+    {
+      "pod": "nats-websocket-proxy-6654c97f47-4fwrh",
+      "value": "5m"
+    }
+  ]
+}
