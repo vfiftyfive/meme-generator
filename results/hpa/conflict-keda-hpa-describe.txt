@@ -1,0 +1,27 @@
+Name:                                                keda-hpa-meme-backend
+Namespace:                                           meme-generator
+Labels:                                              app.kubernetes.io/managed-by=keda-operator
+                                                     app.kubernetes.io/name=keda-hpa-meme-backend
+                                                     app.kubernetes.io/part-of=meme-backend
+                                                     app.kubernetes.io/version=2.18.0
+                                                     scaledobject.keda.sh/name=meme-backend
+Annotations:                                         <none>
+CreationTimestamp:                                   Sun, 26 Oct 2025 17:33:18 +0000
+Reference:                                           Deployment/meme-backend
+Metrics:                                             ( current / target )
+  "s0-nats-jetstream-MEMES" (target average value):  0 / 5
+Min replicas:                                        1
+Max replicas:                                        10
+Deployment pods:                                     10 current / 10 desired
+Conditions:
+  Type            Status  Reason               Message
+  ----            ------  ------               -------
+  AbleToScale     True    ScaleDownStabilized  recent recommendations were higher than current one, applying the highest recent recommendation
+  ScalingActive   True    ValidMetricFound     the HPA was able to successfully calculate a replica count from external metric s0-nats-jetstream-MEMES(&LabelSelector{MatchLabels:map[string]string{scaledobject.keda.sh/name: meme-backend,},MatchExpressions:[]LabelSelectorRequirement{},})
+  ScalingLimited  True    TooManyReplicas      the desired replica count is more than the maximum replica count
+Events:
+  Type    Reason             Age   From                       Message
+  ----    ------             ----  ----                       -------
+  Normal  SuccessfulRescale  73s   horizontal-pod-autoscaler  New size: 4; reason: external metric s0-nats-jetstream-MEMES(&LabelSelector{MatchLabels:map[string]string{scaledobject.keda.sh/name: meme-backend,},MatchExpressions:[]LabelSelectorRequirement{},}) above target
+  Normal  SuccessfulRescale  58s   horizontal-pod-autoscaler  New size: 8; reason: external metric s0-nats-jetstream-MEMES(&LabelSelector{MatchLabels:map[string]string{scaledobject.keda.sh/name: meme-backend,},MatchExpressions:[]LabelSelectorRequirement{},}) above target
+  Normal  SuccessfulRescale  43s   horizontal-pod-autoscaler  New size: 10; reason: external metric s0-nats-jetstream-MEMES(&LabelSelector{MatchLabels:map[string]string{scaledobject.keda.sh/name: meme-backend,},MatchExpressions:[]LabelSelectorRequirement{},}) above target

@@ -13,20 +13,21 @@
 ## 1. Hook (0:00–0:45)
 - **Narration (keep it conversational):**
   - “Imagine two coaches shouting different plays at the same team—that’s our autoscaling story tonight.”
-  - “KEDA is listening to two masters—queue lag and average CPU—and the result is chaos.”
+  - “One coach (the manual HPA) listens to average CPU—the lie. The other coach (KEDA) listens to queue lag—the symptom.”
 - **Visual:** flash `results/grafana/conflict-dashboard.png` (or live dashboard) and trace the jagged replica line plus 90%+ CPU plateau.
 - **Set the promise:** “We’re going to turn that chaos into a coordinated orchestra by feeding the HPA a business-aware metric via the Prometheus Adapter.”
 
 ## 2. Act I – Conflict (0:45–3:00)
 1. **Stage the fight**
    - Run `./scripts/autoscaler-toggle.sh chaos`.
-   - Say: “KEDA now has two conflicting triggers in one ScaledObject—queue lag says ‘add pods’, fake average CPU says ‘remove pods’.”
+   - Say: “Now the manual HPA (CPU % target) and the KEDA queue scaler are both in charge of the same deployment.”
+   - Optional: briefly show the two YAML snippets (`k8s/base/backend-hpa.yaml` and `k8s/base/backend-keda-scaledobject.yaml`) to prove the configuration.
 2. **Trigger pressure**
    - Execute `./scripts/nats-queue-load.sh --messages 6000 --clients 60`.
    - Mention: “This is a JetStream burst—6,000 meme requests to spike the queue.”
 3. **Narrate symptoms while the command runs**
-   - Terminal window with `watch -n 2 kubectl get hpa -n meme-generator`: point at the KEDA-generated HPA swinging rapidly.
-   - Optional live describe: `kubectl describe hpa keda-hpa-meme-backend-chaos -n meme-generator` (highlights repeated rescale events—mirrors `results/hpa/conflict-keda-hpa-describe.txt`).
+   - Terminal window with `watch -n 2 kubectl get hpa -n meme-generator`: point at the KEDA-generated HPA (`keda-hpa-meme-backend`) fighting the manual `meme-backend` HPA.
+   - Optional live describe: `kubectl describe hpa keda-hpa-meme-backend -n meme-generator` (highlights repeated rescale events—mirrors `results/hpa/conflict-keda-hpa-describe.txt`).
    - Pod churn: `kubectl get pods -n meme-generator -l app=meme-backend -w`; reference pre-captured `results/hpa/conflict-current-pods.txt`.
 4. **Call out failure symptoms**
    - “Queue lag shoots up because both autoscalers over-correct.”

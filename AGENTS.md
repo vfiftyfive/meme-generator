@@ -16,11 +16,10 @@ issue so the next agent can resume without interviewing humans.
   (`hpa-watch-harmony.log`, `results/hpa/harmony-hpa-snippet.txt`,
   `results/grafana/harmony-dashboard.png`, `results/k6-load-demo-harmony.json`).
 - **Prometheus Adapter integrated.** Helm release exposes both `memegenerator_pod_cpu_rate` and
-  the new translator metric `memegenerator_pod_productivity`. The manual HPA consumes the CPU rate;
-  the harmony KEDA ScaledObject consumes productivity via Prometheus trigger. Evidence for both
-  modes lives under `results/hpa/harmony-*`.
+  the new translator metric `memegenerator_pod_productivity` (`results/hpa/harmony-memegenerator-productivity.json`).
+  The manual HPA consumes the CPU rate; the harmony KEDA ScaledObject consumes productivity via Prometheus trigger.
 - **Conflict evidence refreshed.** Latest 6k-message burst under chaos mode (`./scripts/autoscaler-toggle.sh chaos`)
-  captured in `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}`.
+  captured in `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}` (2025-10-26 run).
 - **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
   importable/renderable on demand; docs reference new workflows.
 

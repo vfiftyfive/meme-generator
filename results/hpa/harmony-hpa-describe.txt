@@ -1,31 +1,22 @@
-Name:                                                  meme-backend
-Namespace:                                             meme-generator
-Labels:                                                <none>
-Annotations:                                           <none>
-CreationTimestamp:                                     Thu, 23 Oct 2025 21:00:09 +0100
-Reference:                                             Deployment/meme-backend
-Metrics:                                               ( current / target )
-  "memegenerator_pod_cpu_rate" on pods:                0 / 20m
-  resource cpu on pods  (as a percentage of request):  0% (0) / 50%
-Min replicas:                                          1
-Max replicas:                                          10
-Behavior:
-  Scale Up:
-    Stabilization Window: 30 seconds
-    Select Policy: Max
-    Policies:
-      - Type: Percent  Value: 100  Period: 60 seconds
-      - Type: Pods     Value: 4    Period: 60 seconds
-  Scale Down:
-    Stabilization Window: 300 seconds
-    Select Policy: Max
-    Policies:
-      - Type: Percent  Value: 50  Period: 60 seconds
-Deployment pods:       1 current / 1 desired
+Name:                                      keda-hpa-meme-backend-harmony
+Namespace:                                 meme-generator
+Labels:                                    app.kubernetes.io/managed-by=keda-operator
+                                           app.kubernetes.io/name=keda-hpa-meme-backend-harmony
+                                           app.kubernetes.io/part-of=meme-backend-harmony
+                                           app.kubernetes.io/version=2.18.0
+                                           scaledobject.keda.sh/name=meme-backend-harmony
+Annotations:                               <none>
+CreationTimestamp:                         Sun, 26 Oct 2025 17:35:31 +0000
+Reference:                                 Deployment/meme-backend
+Metrics:                                   ( current / target )
+  "s0-prometheus" (target average value):  0 / 500m
+Min replicas:                              1
+Max replicas:                              10
+Deployment pods:                           10 current / 10 desired
 Conditions:
-  Type            Status  Reason              Message
-  ----            ------  ------              -------
-  AbleToScale     True    ReadyForNewScale    recommended size matches current size
-  ScalingActive   True    ValidMetricFound    the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
-  ScalingLimited  False   DesiredWithinRange  the desired count is within the acceptable range
+  Type            Status  Reason               Message
+  ----            ------  ------               -------
+  AbleToScale     True    ScaleDownStabilized  recent recommendations were higher than current one, applying the highest recent recommendation
+  ScalingActive   True    ValidMetricFound     the HPA was able to successfully calculate a replica count from external metric s0-prometheus(&LabelSelector{MatchLabels:map[string]string{scaledobject.keda.sh/name: meme-backend-harmony,},MatchExpressions:[]LabelSelectorRequirement{},})
+  ScalingLimited  False   DesiredWithinRange   the desired count is within the acceptable range
 Events:           <none>

@@ -3,12 +3,13 @@ set -euo pipefail
 ACTION=${1:-}
 case "$ACTION" in
   chaos)
-    echo "⚠️ Enabling chaos mode (conflicting triggers in single KEDA ScaledObject)"
+    echo "⚠️ Enabling chaos mode (manual HPA + queue-based KEDA fighting each other)"
     kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
     kubectl delete scaledobject.keda.sh meme-backend -n meme-generator --ignore-not-found
     kubectl delete scaledobject.keda.sh meme-backend-chaos -n meme-generator --ignore-not-found
     kubectl delete scaledobject.keda.sh meme-backend-harmony -n meme-generator --ignore-not-found
-    kubectl apply -f k8s/scenarios/backend-scaledobject-chaos.yaml
+    kubectl apply -f k8s/base/backend-keda-scaledobject.yaml
+    kubectl apply -f k8s/base/backend-hpa.yaml
     ;;
   harmony)
     echo "🎼 Enabling harmony mode (productivity-based Prometheus trigger)"
@@ -19,10 +20,9 @@ case "$ACTION" in
     kubectl apply -f k8s/scenarios/backend-scaledobject-harmony.yaml
     ;;
   conflict)
-    echo "🔄 Enabling HPA + KEDA conflict on meme-backend"
-    kubectl delete hpa meme-backend -n meme-generator --ignore-not-found
-    kubectl apply -f k8s/base/backend-keda-scaledobject.yaml
-    kubectl apply -f k8s/base/backend-hpa.yaml
+    echo "🔄 (alias) Enabling chaos/conflict mode"
+    "$0" chaos
+    exit 0
     ;;
   keda-only)
     echo "🔄 Enabling KEDA-only scaling (removing manual HPA)"
@@ -42,7 +42,7 @@ case "$ACTION" in
   *)
     cat <<USAGE
 Usage: $0 {chaos|harmony|conflict|keda-only|hpa-only|teardown|status}
-  chaos      - single KEDA ScaledObject with conflicting triggers (demo the fight)
+  chaos      - manual HPA + queue-based KEDA (demo the fight)
   harmony    - KEDA ScaledObject using Prometheus productivity metric
   conflict   - ensure both base KEDA ScaledObject and manual HPA exist
   keda-only  - remove manual HPA and rely on base KEDA ScaledObject

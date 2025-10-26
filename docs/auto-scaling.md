@@ -392,7 +392,7 @@ kubectl get --raw \
 
 | Scenario | Autoscalers | Load command | Replica band | Key artifacts |
 | --- | --- | --- | --- | --- |
-| Chaos (new talk hook) | Single KEDA ScaledObject with CPU + queue triggers (`./scripts/autoscaler-toggle.sh chaos`) | `./scripts/nats-queue-load.sh --messages 6000 --clients 60` | 1→10 oscillation, throttling spikes | `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}`, `results/grafana/conflict-dashboard.png` |
+| Chaos (new talk hook) | Manual HPA + queue-based KEDA (`./scripts/autoscaler-toggle.sh chaos`) | `./scripts/nats-queue-load.sh --messages 6000 --clients 60` | 1→10 oscillation, throttling spikes | `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}`, `results/grafana/conflict-dashboard.png` |
 | Harmony | KEDA Prometheus trigger on `memegenerator_pod_productivity` (`./scripts/autoscaler-toggle.sh harmony`) | `./scripts/nats-queue-load.sh --messages 4000 --clients 40` | 1→10→1 with smooth queue drain | `results/hpa/harmony-{custom-metric-hpa.txt,memegenerator-pod-metric-peak.json}`, `results/grafana/harmony-dashboard.png` |
 
 ## Troubleshooting

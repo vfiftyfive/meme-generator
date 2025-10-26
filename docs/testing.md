@@ -150,7 +150,7 @@ done
 #### Option 3: In-Cluster Load Job (Recommended)
 
 ```bash
-# Chaos rehearsal (single KEDA object with conflicting triggers)
+# Chaos rehearsal (manual HPA + queue-driven KEDA)
 ./scripts/autoscaler-toggle.sh chaos
 ./scripts/nats-queue-load.sh --messages 6000 --clients 60
 
@@ -168,6 +168,7 @@ Artifacts from the latest rehearsals:
 - Grafana renders: `results/grafana/conflict-dashboard.png`, `results/grafana/harmony-dashboard.png`
 - k6 summary (harmony): `results/k6-load-demo-harmony.json`
 - Custom metric HPA snapshots: `results/hpa/harmony-custom-metric-hpa.txt` plus `harmony-memegenerator-pod-metric{,-peak,-idle}.json`
+- Productivity metric snapshot: `results/hpa/harmony-memegenerator-productivity.json`
 - Conflict metric snapshots: `results/hpa/conflict-memegenerator-pod-metric.json`, `results/hpa/conflict-current-pods.txt`
 - Custom metric (Prometheus Adapter):
   ```bash

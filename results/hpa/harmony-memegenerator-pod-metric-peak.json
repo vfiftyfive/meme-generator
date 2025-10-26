@@ -1,35 +1,151 @@
 {
-  "capturedAt": "2025-10-22T16:06:27Z",
   "kind": "MetricValueList",
   "apiVersion": "custom.metrics.k8s.io/v1beta1",
+  "metadata": {},
   "items": [
     {
-      "pod": "meme-backend-b6c8dd9fc-6jkr7",
-      "value": "9m"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-7clp6",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "6m",
+      "selector": null
     },
     {
-      "pod": "meme-backend-b6c8dd9fc-829ns",
-      "value": "0"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-899c2",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "9m",
+      "selector": null
     },
     {
-      "pod": "meme-backend-b6c8dd9fc-9j4nd",
-      "value": "89m"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-dqfsj",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "7m",
+      "selector": null
     },
     {
-      "pod": "meme-backend-b6c8dd9fc-crtwv",
-      "value": "10m"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-kqddq",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "6m",
+      "selector": null
     },
     {
-      "pod": "meme-backend-b6c8dd9fc-fvffm",
-      "value": "0"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-l9v9w",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "8m",
+      "selector": null
     },
     {
-      "pod": "meme-generator-frontend-5f5f96c698-vxbpx",
-      "value": "0"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-lcldj",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "10m",
+      "selector": null
     },
     {
-      "pod": "nats-websocket-proxy-6654c97f47-4fwrh",
-      "value": "5m"
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-nl5p9",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "6m",
+      "selector": null
+    },
+    {
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-s9bk8",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "10m",
+      "selector": null
+    },
+    {
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-txlbq",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "8m",
+      "selector": null
+    },
+    {
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-backend-b6c8dd9fc-wtzs4",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "8m",
+      "selector": null
+    },
+    {
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "meme-generator-frontend-5f5f96c698-vxbpx",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "0",
+      "selector": null
+    },
+    {
+      "describedObject": {
+        "kind": "Pod",
+        "namespace": "meme-generator",
+        "name": "nats-websocket-proxy-6654c97f47-4fwrh",
+        "apiVersion": "/v1"
+      },
+      "metricName": "memegenerator_pod_cpu_rate",
+      "timestamp": "2025-10-26T17:37:08Z",
+      "value": "12m",
+      "selector": null
     }
   ]
 }
