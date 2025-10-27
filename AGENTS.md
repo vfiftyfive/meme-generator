@@ -22,7 +22,8 @@ issue so the next agent can resume without interviewing humans.
   captured in `results/hpa/conflict-{...}` plus fresh Grafana PNGs
   (`results/grafana/chaos-pod-count.png`, `chaos-queue.png`, `chaos-throttling.png`).
 - **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
-  importable/renderable on demand; docs reference new workflows.
+  importable/renderable on demand; docs reference new workflows. Prometheus now scrapes JetStream via the
+  `prometheus-nats-exporter` deployment (`k8s/monitoring/prometheus-nats-exporter.yaml`).
 
 ### Caveats & Unknowns
 - Failure symptom log (events, pod churn) still needs to be curated for the conflict

@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-nats-exporter
+  namespace: messaging
+  labels:
+    app: prometheus-nats-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-nats-exporter
+  template:
+    metadata:
+      labels:
+        app: prometheus-nats-exporter
+    spec:
+      containers:
+        - name: exporter
+          image: natsio/prometheus-nats-exporter:0.13.0
+          args:
+            - "-varz"
+            - "-connz"
+            - "-routez"
+            - "-subz"
+            - "-jsz=all"
+            - "-serverz"
+            - "-gatewayz"
+            - "-leafz"
+            - "http://nats.messaging.svc.cluster.local:8222"
+          ports:
+            - containerPort: 7777
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-nats-exporter
+  namespace: messaging
+  labels:
+    app: prometheus-nats-exporter
+spec:
+  selector:
+    app: prometheus-nats-exporter
+  ports:
+    - name: http
+      port: 7777
+      targetPort: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-nats-exporter
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: prometheus-nats-exporter
+  namespaceSelector:
+    matchNames:
+      - messaging
+  endpoints:
+    - port: http
+      interval: 15s
+      path: /metrics

@@ -180,6 +180,13 @@ Artifacts from the latest rehearsals:
   kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/meme-generator/metrics/memegenerator_pod_cpu_rate'
   ```
 - Slide prep tip: pair `results/grafana/conflict-dashboard.png` with the conflict metric JSON to show “autoscalers fighting,” then contrast with `results/grafana/harmony-dashboard.png` + `harmony-memegenerator-pod-metric-peak.json` for the orchestra story.
+- NATS exporter metrics (via `prometheus-nats-exporter`):
+  ```bash
+  # Pending JetStream messages for the MEMES consumer
+  kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9096:9090
+  curl -sG 'http://127.0.0.1:9096/api/v1/query' --data-urlencode \
+    'query=jetstream_consumer_num_pending{stream_name="MEMES",consumer_name="meme-generator"}'
+  ```
 - Slide prep tip: pair `results/grafana/conflict-dashboard.png` with the conflict metric JSON to show “autoscalers fighting,” then contrast with `results/grafana/harmony-dashboard.png` + `harmony-memegenerator-pod-metric-peak.json` for the orchestra story.
 
 ### Monitor NATS Queue and Scaling
