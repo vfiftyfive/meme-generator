@@ -19,7 +19,8 @@ issue so the next agent can resume without interviewing humans.
   the new translator metric `memegenerator_pod_productivity` (`results/hpa/harmony-memegenerator-productivity.json`).
   The manual HPA consumes the CPU rate; the harmony KEDA ScaledObject consumes productivity via Prometheus trigger.
 - **Conflict evidence refreshed.** Latest 6k-message burst under chaos mode (`./scripts/autoscaler-toggle.sh chaos`)
-  captured in `results/hpa/conflict-{manual-hpa-describe.txt,keda-hpa-describe.txt,memegenerator-pod-metric.json,conflict-current-pods.txt}` (2025-10-26 run).
+  captured in `results/hpa/conflict-{...}` plus fresh Grafana PNGs
+  (`results/grafana/chaos-pod-count.png`, `chaos-queue.png`, `chaos-throttling.png`).
 - **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
   importable/renderable on demand; docs reference new workflows.
 
@@ -62,9 +63,9 @@ your work alters the flow.
 1. **Harmony evidence:** Fold new productivity metrics (`results/hpa/harmony-*.{txt,json}`) into slides/docs
    so the translator story is front-and-center.
 2. **Conflict visuals:** Incorporate latest chaos snapshots/logs (`results/hpa/conflict-*`) + CPU throttling panel
-   screenshots into slides; highlight the “lie” vs ground truth.
+   screenshots (`results/grafana/chaos-*.png`) into slides; highlight the “lie” vs ground truth.
 3. **Narrative assets:** Embed/annotate Grafana PNGs (`results/grafana/*.png`) showing pod count, queue lag,
-   average CPU, and throttling.
+   throttling, and productivity harmony.
 4. **Failure symptoms:** Pull talking points from `results/hpa/conflict-*` + throttling metrics into speaker notes.
 5. **Demo script review:** Walk stakeholders through `docs/demo-script.md`; capture feedback and integrate into slides.
 

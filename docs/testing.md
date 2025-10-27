@@ -166,6 +166,7 @@ Artifacts from the latest rehearsals:
 - HPA logs: `results/hpa/conflict-hpa-snippet.txt`, `results/hpa/harmony-hpa-snippet.txt`
 - `kubectl describe hpa` detail: `results/hpa/conflict-manual-hpa-describe.txt`, `results/hpa/conflict-keda-hpa-describe.txt`, `results/hpa/harmony-hpa-describe.txt`
 - Grafana renders: `results/grafana/conflict-dashboard.png`, `results/grafana/harmony-dashboard.png`
+- High-res panels for slides: `results/grafana/chaos-pod-count.png`, `results/grafana/chaos-queue.png`, `results/grafana/chaos-throttling.png`, `results/grafana/harmony-productivity.png`
 - k6 summary (harmony): `results/k6-load-demo-harmony.json`
 - Custom metric HPA snapshots: `results/hpa/harmony-custom-metric-hpa.txt` plus `harmony-memegenerator-pod-metric{,-peak,-idle}.json`
 - Productivity metric snapshot: `results/hpa/harmony-memegenerator-productivity.json`
