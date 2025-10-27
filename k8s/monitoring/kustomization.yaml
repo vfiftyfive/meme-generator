@@ -4,3 +4,12 @@ kind: Kustomization
 resources:
   - backend-servicemonitor.yaml
   - prometheus-nats-exporter.yaml
+
+configMapGenerator:
+  - name: meme-generator-dashboard
+    namespace: monitoring
+    options:
+      labels:
+        grafana_dashboard: "1"
+    files:
+      - meme-generator-auto-scaling-dashboard.json=complete-dashboard.json

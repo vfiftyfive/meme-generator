@@ -711,7 +711,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"meme-generator\", pod=~\"meme-generator-backend-.*\"}[1m]))",
+      "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"meme-generator\", pod=~\"meme-backend-.*\"}[1m]))",
           "legendFormat": "Backend CPU Usage",
           "refId": "A"
         },
@@ -720,7 +720,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"meme-generator\", pod=~\"meme-generator-backend-.*\"})",
+      "expr": "sum(container_memory_working_set_bytes{namespace=\"meme-generator\", pod=~\"meme-backend-.*\"})",
           "legendFormat": "Backend Memory Usage",
           "refId": "B"
         },
