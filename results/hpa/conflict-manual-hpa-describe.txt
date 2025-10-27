@@ -2,11 +2,11 @@ Name:                                                  meme-backend
 Namespace:                                             meme-generator
 Labels:                                                <none>
 Annotations:                                           <none>
-CreationTimestamp:                                     Sun, 26 Oct 2025 17:33:19 +0000
+CreationTimestamp:                                     Mon, 27 Oct 2025 17:15:30 +0000
 Reference:                                             Deployment/meme-backend
 Metrics:                                               ( current / target )
-  "memegenerator_pod_cpu_rate" on pods:                8m / 20m
-  resource cpu on pods  (as a percentage of request):  <unknown> / 50%
+  "memegenerator_pod_cpu_rate" on pods:                0 / 20m
+  resource cpu on pods  (as a percentage of request):  1% (1m) / 50%
 Min replicas:                                          1
 Max replicas:                                          10
 Behavior:
@@ -23,12 +23,16 @@ Behavior:
       - Type: Percent  Value: 50  Period: 60 seconds
 Deployment pods:       10 current / 10 desired
 Conditions:
-  Type            Status  Reason                   Message
-  ----            ------  ------                   -------
-  AbleToScale     True    ReadyForNewScale         recommended size matches current size
-  ScalingActive   False   FailedGetResourceMetric  the HPA was unable to compute the replica count: No recommendation
-  ScalingLimited  False   DesiredWithinRange       the desired count is within the acceptable range
+  Type            Status  Reason               Message
+  ----            ------  ------               -------
+  AbleToScale     True    ScaleDownStabilized  recent recommendations were higher than current one, applying the highest recent recommendation
+  ScalingActive   True    ValidMetricFound     the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  False   DesiredWithinRange   the desired count is within the acceptable range
 Events:
-  Type     Reason                   Age                From                       Message
-  ----     ------                   ----               ----                       -------
-  Warning  FailedGetResourceMetric  12s (x4 over 58s)  horizontal-pod-autoscaler  No recommendation
+  Type     Reason                   Age                 From                       Message
+  ----     ------                   ----                ----                       -------
+  Warning  FailedGetResourceMetric  81s (x8 over 3m8s)  horizontal-pod-autoscaler  No recommendation
+  Normal   SuccessfulRescale        66s                 horizontal-pod-autoscaler  New size: 5; reason: pods metric memegenerator_pod_cpu_rate below target
+  Normal   SuccessfulRescale        51s                 horizontal-pod-autoscaler  New size: 7; reason: pods metric memegenerator_pod_cpu_rate below target
+  Normal   SuccessfulRescale        35s                 horizontal-pod-autoscaler  New size: 9; reason: cpu resource utilization (percentage of request) below target
+  Normal   HpaProfileNone           35s                 horizontal-pod-autoscaler  The HPA rescaled target based on none profile

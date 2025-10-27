@@ -18,9 +18,8 @@ issue so the next agent can resume without interviewing humans.
 - **Prometheus Adapter integrated.** Helm release exposes both `memegenerator_pod_cpu_rate` and
   the new translator metric `memegenerator_pod_productivity` (`results/hpa/harmony-memegenerator-productivity.json`).
   The manual HPA consumes the CPU rate; the harmony KEDA ScaledObject consumes productivity via Prometheus trigger.
-- **Conflict evidence refreshed.** Latest 6k-message burst under chaos mode (`./scripts/autoscaler-toggle.sh chaos`)
-  captured in `results/hpa/conflict-{...}` plus fresh Grafana PNGs
-  (`results/grafana/chaos-pod-count.png`, `chaos-queue.png`, `chaos-throttling.png`).
+- **Conflict evidence refreshed.** Latest chaos burst captured in `results/hpa/conflict-{...}` plus
+  `results/hpa/conflict-jetstream-pending.json` (Prometheus exporter) and Grafana PNGs.
 - **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
   importable/renderable on demand; docs reference new workflows. Prometheus now scrapes JetStream via the
   `prometheus-nats-exporter` deployment (`k8s/monitoring/prometheus-nats-exporter.yaml`).

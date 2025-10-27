@@ -170,7 +170,7 @@ Artifacts from the latest rehearsals:
 - k6 summary (harmony): `results/k6-load-demo-harmony.json`
 - Custom metric HPA snapshots: `results/hpa/harmony-custom-metric-hpa.txt` plus `harmony-memegenerator-pod-metric{,-peak,-idle}.json`
 - Productivity metric snapshot: `results/hpa/harmony-memegenerator-productivity.json`
-- Conflict metric snapshots: `results/hpa/conflict-memegenerator-pod-metric.json`, `results/hpa/conflict-current-pods.txt`
+- Conflict metric snapshots: `results/hpa/conflict-memegenerator-pod-metric.json`, `results/hpa/conflict-current-pods.txt`, `results/hpa/conflict-jetstream-pending.json`
 - Custom metric (Prometheus Adapter):
   ```bash
   # Pod-level values (non-zero during load)
