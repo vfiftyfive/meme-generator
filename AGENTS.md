@@ -23,6 +23,8 @@ issue so the next agent can resume without interviewing humans.
 - **Tooling hardened.** `scripts/nats-queue-load.sh` runs conflict/harmony presets; dashboards are
   importable/renderable on demand; docs reference new workflows. Prometheus now scrapes JetStream via the
   `prometheus-nats-exporter` deployment (`k8s/monitoring/prometheus-nats-exporter.yaml`).
+- **Context discipline.** Always switch to `gke_scaleops-dev-rel_us-central1-a_meme-demo` (`kubectl config use-context ...`) before
+  applying manifests or Helm upgrades; other contexts on this machine point to unrelated clusters.
 
 ### Caveats & Unknowns
 - Failure symptom log (events, pod churn) still needs to be curated for the conflict

@@ -12,7 +12,7 @@ rules:
         matches: "^container_cpu_usage_seconds_total$"
         as: memegenerator_pod_cpu_rate
       metricsQuery: sum(rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>,namespace="meme-generator"}[2m])) by (namespace,pod)
-    - seriesQuery: 'meme_generator_success_total{namespace!="",pod!=""}'
+    - seriesQuery: 'meme_generator_success_total{pod!=""}'
       resources:
         overrides:
           namespace:
@@ -24,11 +24,15 @@ rules:
         as: memegenerator_pod_productivity
       metricsQuery: |
         (
-          sum by (namespace,pod) (rate(meme_generator_success_total{<<.LabelMatchers>>,namespace="meme-generator"}[2m]))
+          sum by (namespace,pod) (
+            rate(meme_generator_success_total{<<.LabelMatchers>>}[5m])
+          )
           /
           clamp_min(
-            sum by (namespace,pod) (rate(container_cpu_usage_seconds_total{namespace="meme-generator",container!="",container!="POD"}[2m])),
-            0.001
+            sum by (namespace,pod) (
+              rate(container_cpu_usage_seconds_total{<<.LabelMatchers>>,container!="",container!="POD"}[5m])
+            ),
+            0.0001
           )
         ) or on() vector(0)
 prometheus:
